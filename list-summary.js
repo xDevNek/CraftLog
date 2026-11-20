@@ -6,574 +6,38 @@ window.createListSummary = function createListSummary(
   save
 ) {
   const de = language === "de";
-
-  const existingStyle = document.getElementById(
-    "craftlog-summary-teamcraft-styles"
-  );
-  if (existingStyle) {
-    existingStyle.remove();
-  }
-
-  const style = document.createElement("style");
-  style.id = "craftlog-summary-teamcraft-styles";
-  style.textContent = `
-    .tc-summary-toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.75rem;
-      padding: 0.7rem 0.9rem;
-      border-radius: 5px;
-      background: var(--forest-light);
-      border: 1px solid var(--line);
-    }
-
-    .tc-progress-wrap {
-      flex: 1 1 200px;
-      min-width: 0;
-    }
-
-    .tc-progress-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 0.5rem;
-      font-size: 0.82rem;
-      margin-bottom: 0.35rem;
-      color: var(--ink);
-    }
-
-    .tc-progress-bar {
-      height: 6px;
-      border-radius: 999px;
-      background: var(--line);
-      overflow: hidden;
-    }
-
-    .tc-progress-fill {
-      height: 100%;
-      border-radius: 999px;
-      background: var(--mc-grass, var(--forest));
-      transition: width 180ms ease;
-    }
-
-    .tc-controls {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 0.45rem;
-    }
-
-    .tc-unit-switch {
-      display: inline-flex;
-      border-radius: 4px;
-      overflow: hidden;
-      border: 1px solid var(--line);
-      background: var(--surface);
-    }
-
-    .tc-unit-btn {
-      appearance: none;
-      border: 0;
-      border-right: 1px solid var(--line);
-      background: transparent;
-      color: var(--muted);
-      font: inherit;
-      font-size: 0.76rem;
-      padding: 0.32rem 0.6rem;
-      cursor: pointer;
-    }
-
-    .tc-unit-btn:last-child {
-      border-right: 0;
-    }
-
-    .tc-unit-btn:hover {
-      color: var(--ink);
-      background: var(--forest-light);
-    }
-
-    .tc-unit-btn.is-active {
-      color: #fff;
-      font-weight: bold;
-      background: var(--forest);
-    }
-
-    :root[data-theme="dark"] .tc-unit-btn.is-active {
-      color: #152019;
-    }
-
-    .tc-fuel-select {
-      font: inherit;
-      font-size: 0.78rem;
-      padding: 0.32rem 0.55rem;
-      border-radius: 4px;
-      border: 1px solid var(--line);
-      background: var(--surface);
-      color: var(--ink);
-      max-width: 100%;
-    }
-
-    .tc-reset-btn {
-      font: inherit;
-      font-size: 0.76rem;
-      padding: 0.32rem 0.6rem;
-      border-radius: 4px;
-      border: 1px solid var(--line);
-      background: var(--surface);
-      color: var(--danger);
-      cursor: pointer;
-    }
-
-    .tc-reset-btn:hover {
-      border-color: var(--danger);
-    }
-
-    /* Stabiles 2-Spalten-Grid für Variantenwahl */
-    .list-summary-choice-row {
-      display: grid;
-      grid-template-columns: 15.5rem minmax(0, 1fr);
-      align-items: center;
-      gap: 0.65rem;
-      width: 100%;
-    }
-
-    .list-summary-choice-row:has(> :only-child) {
-      grid-template-columns: minmax(0, 1fr);
-    }
-
-    .list-summary-choice-row .crafting-slot {
-      width: 100%;
-      min-width: 0;
-    }
-
-    .list-summary-choice-row .crafting-slot-box {
-      display: flex;
-      width: 100%;
-      min-width: 0;
-      box-sizing: border-box;
-      overflow: hidden;
-    }
-
-    .list-summary-choice-row .crafting-slot-info {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.1rem;
-      min-width: 0;
-      flex: 1 1 auto;
-      overflow: hidden;
-    }
-
-    .list-summary-choice-row .crafting-slot-name {
-      display: block;
-      width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .list-summary-choice-row .crafting-slot-counter {
-      display: block;
-      line-height: 1.1;
-    }
-
-    .list-summary-choice-row .list-summary-select {
-      width: 100%;
-      min-width: 0;
-      box-sizing: border-box;
-    }
-
-    @media (max-width: 640px) {
-      .list-summary-choice-row {
-        grid-template-columns: minmax(0, 1fr);
-      }
-    }
-
-    /* Teamcraft Sektions-Container (Sammeln / Vorhergehende Handwerksschritte / Gegenstände) */
-    .tc-panel {
-      border: 1px solid var(--line);
-      border-radius: 5px;
-      background: var(--surface);
-      overflow: hidden;
-    }
-
-    .tc-panel-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.75rem;
-      padding: 0.6rem 0.85rem;
-      background: var(--forest-light);
-      border-bottom: 1px solid var(--line);
-      cursor: pointer;
-      list-style: none;
-      user-select: none;
-    }
-
-    .tc-panel:not([open]) .tc-panel-header {
-      border-bottom: 0;
-    }
-
-    .tc-panel-header::-webkit-details-marker {
-      display: none;
-    }
-
-    .tc-panel-title-wrap {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      min-width: 0;
-    }
-
-    .tc-panel-chevron {
-      display: inline-block;
-      font-size: 0.75rem;
-      color: var(--muted);
-      transition: transform 150ms ease;
-    }
-
-    .tc-panel[open] .tc-panel-chevron {
-      transform: rotate(90deg);
-    }
-
-    .tc-panel-title {
-      font-size: 0.86rem;
-      font-weight: bold;
-      color: var(--ink);
-    }
-
-    .tc-panel-actions {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      flex-shrink: 0;
-    }
-
-    .tc-header-icon-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 26px;
-      height: 26px;
-      padding: 0;
-      border: 1px solid var(--line);
-      border-radius: 4px;
-      background: var(--surface);
-      color: var(--muted);
-      font-size: 0.8rem;
-      line-height: 1;
-    }
-
-    .tc-header-icon-btn:hover {
-      border-color: var(--forest);
-      color: var(--forest);
+  const H = window.CraftLogHelpers;
+  const recipeTypeNames = H.getRecipeTypeNames(language);
+  const sourceCategoryLabels = H.getSourceCategoryLabels(language);
+  const fuels = H.fuels;
+
+  const CATEGORY_META = {
+    location: {
+      icon: "⛏️",
+      de: "Fundort",
+      en: "Location"
+    },
+    farm: {
+      icon: "🌾",
+      de: "Farm",
+      en: "Farm"
+    },
+    trade: {
+      icon: "🤝",
+      de: "Handel",
+      en: "Trading"
+    },
+    loot: {
+      icon: "💎",
+      de: "Loot",
+      en: "Loot"
+    },
+    craft: {
+      icon: "🔨",
+      de: "Herstellung",
+      en: "Crafting"
     }
-
-    .tc-panel-body {
-      padding: 0.35rem 0 0.5rem;
-    }
-
-    /* Gruppen-Überschrift mit durchgehender Linie */
-    .tc-group-header {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      padding: 0.55rem 0.9rem 0.3rem;
-      font-size: 0.82rem;
-      font-weight: bold;
-      color: var(--forest);
-    }
-
-    .tc-group-header::before {
-      content: "";
-      width: 1.5rem;
-      height: 1px;
-      background: var(--line);
-      flex-shrink: 0;
-    }
-
-    .tc-group-header::after {
-      content: "";
-      flex: 1;
-      height: 1px;
-      background: var(--line);
-    }
-
-    /* Kompakte Teamcraft Item-Zeile */
-    .tc-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.75rem;
-      padding: 0.38rem 0.9rem;
-      border-bottom: 1px solid color-mix(in srgb, var(--line) 45%, transparent);
-      transition: background-color 120ms ease, opacity 150ms ease;
-    }
-
-    .tc-row:last-child {
-      border-bottom: 0;
-    }
-
-    .tc-row:hover {
-      background: color-mix(in srgb, var(--forest-light) 55%, transparent);
-    }
-
-    .tc-row.is-done {
-      opacity: 0.52;
-    }
-
-    .tc-row-left {
-      display: flex;
-      align-items: center;
-      gap: 0.55rem;
-      min-width: 0;
-      flex: 1 1 auto;
-    }
-
-    .tc-item-icon {
-      width: 24px;
-      height: 24px;
-      border-radius: 3px;
-      flex-shrink: 0;
-      background:
-        linear-gradient(135deg, #ffffff38 0 48%, #00000022 48% 100%),
-        var(--swatch-color, #629a50);
-      border: 1px solid #00000033;
-      box-shadow: inset 0 1px 0 #ffffff40;
-    }
-
-    .tc-item-icon.is-item {
-      width: 20px;
-      height: 20px;
-      margin: 2px;
-      border-radius: 50%;
-    }
-
-    .tc-item-label-group {
-      display: flex;
-      align-items: baseline;
-      flex-wrap: wrap;
-      gap: 0.35rem;
-      min-width: 0;
-    }
-
-    .tc-item-name {
-      font-size: 0.86rem;
-      color: var(--ink);
-      overflow-wrap: anywhere;
-    }
-
-    .tc-row.is-done .tc-item-name {
-      text-decoration: line-through;
-      color: var(--muted);
-    }
-
-    .tc-item-qty {
-      font-size: 0.85rem;
-      font-weight: bold;
-      color: var(--ink);
-      font-variant-numeric: tabular-nums;
-      white-space: nowrap;
-    }
-
-    .tc-item-sub {
-      font-size: 0.75rem;
-      color: var(--muted);
-    }
-
-    .tc-copy-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 22px;
-      height: 22px;
-      padding: 0;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      background: transparent;
-      color: var(--muted);
-      font-size: 0.72rem;
-      flex-shrink: 0;
-      opacity: 0.65;
-    }
-
-    .tc-row:hover .tc-copy-btn,
-    .tc-copy-btn:focus-visible {
-      opacity: 1;
-    }
-
-    .tc-copy-btn:hover {
-      border-color: var(--forest);
-      color: var(--forest);
-    }
-
-    /* Rechte Seite der Teamcraft-Zeile: [Input | /Total | ✓] + [Station-Pill] */
-    .tc-row-right {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      flex-shrink: 0;
-    }
-
-    .tc-counter-group {
-      display: inline-flex;
-      align-items: stretch;
-      height: 28px;
-      border: 1px solid var(--line);
-      border-radius: 4px;
-      background: var(--paper);
-      overflow: hidden;
-    }
-
-    .tc-have-input {
-      width: 3.4rem;
-      border: 0;
-      padding: 0 0.4rem;
-      background: transparent;
-      color: var(--ink);
-      font: inherit;
-      font-size: 0.82rem;
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-      -moz-appearance: textfield;
-    }
-
-    .tc-have-input::-webkit-outer-spin-button,
-    .tc-have-input::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-
-    .tc-have-input:focus {
-      outline: none;
-      background: var(--surface);
-    }
-
-    .tc-total-cell {
-      display: inline-flex;
-      align-items: center;
-      padding: 0 0.45rem;
-      border-left: 1px solid var(--line);
-      color: var(--muted);
-      font-size: 0.8rem;
-      font-variant-numeric: tabular-nums;
-      white-space: nowrap;
-      background: color-mix(in srgb, var(--surface) 60%, transparent);
-    }
-
-    .tc-check-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 28px;
-      border: 0;
-      border-left: 1px solid var(--line);
-      background: var(--surface);
-      color: var(--muted);
-      font-size: 0.85rem;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background-color 120ms ease, color 120ms ease;
-    }
-
-    .tc-check-btn:hover {
-      background: var(--forest-light);
-      color: var(--forest);
-    }
-
-    .tc-check-btn.is-checked {
-      background: var(--forest);
-      color: #fff;
-    }
-
-    :root[data-theme="dark"] .tc-check-btn.is-checked {
-      color: #152019;
-    }
-
-    .tc-station-pill {
-      display: inline-flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 0.3rem;
-      min-width: 7.2rem;
-      padding: 0.2rem 0.5rem;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: var(--paper);
-      color: var(--muted);
-      font-size: 0.74rem;
-      white-space: nowrap;
-    }
-
-    .tc-station-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--mc-grass, var(--forest));
-      flex-shrink: 0;
-    }
-
-    .tc-station-pill.is-gather .tc-station-dot {
-      background: var(--accent);
-    }
-
-    .tc-station-count {
-      font-weight: bold;
-      color: var(--ink);
-    }
-
-    @media (max-width: 640px) {
-      .tc-row {
-        flex-wrap: wrap;
-        gap: 0.45rem;
-      }
-
-      .tc-row-right {
-        width: 100%;
-        justify-content: space-between;
-        padding-left: 2rem;
-      }
-
-      .tc-station-pill {
-        min-width: 0;
-      }
-    }
-  `;
-  document.head.append(style);
-
-  const recipeTypeNames = {
-    crafting_shaped: de ? "Werkbank" : "Crafting Table",
-    crafting_shapeless: de ? "Werkbank" : "Crafting Table",
-    smelting: de ? "Ofen" : "Furnace",
-    blasting: de ? "Hochofen" : "Blast Furnace",
-    smoking: de ? "Räucherofen" : "Smoker",
-    campfire_cooking: de ? "Lagerfeuer" : "Campfire",
-    stonecutting: de ? "Steinsäge" : "Stonecutter",
-    smithing_transform: de ? "Schmiedetisch" : "Smithing Table"
   };
-
-  const sourceCategoryLabels = {
-    location: de ? "Fundort / Abbauen" : "Location / Mining",
-    farm: de ? "Farm" : "Farming",
-    trade: de ? "Villager-Handel" : "Villager Trading",
-    loot: de ? "Loot / Truhen" : "Loot / Chests",
-    craft: de ? "Herstellung" : "Crafting",
-    fuel: de ? "Brennstoff" : "Fuel",
-    other: de ? "Allgemeine Rohstoffe" : "General Resources"
-  };
-
-  const fuels = [
-    { id: "minecraft:coal", quarters: 32 },
-    { id: "minecraft:charcoal", quarters: 32 },
-    { id: "minecraft:coal_block", quarters: 320 },
-    { id: "minecraft:dried_kelp_block", quarters: 80 },
-    { id: "minecraft:blaze_rod", quarters: 48 },
-    { id: "minecraft:stick", quarters: 2 },
-    { id: "minecraft:bamboo", quarters: 1 },
-    { id: "minecraft:lava_bucket", quarters: 400, reusableBucket: true }
-  ];
 
   const isBlockById = new Map(
     (minecraft.catalog || []).map(entry => [
@@ -581,369 +45,6 @@ window.createListSummary = function createListSummary(
       Boolean(entry.isBlock)
     ])
   );
-
-  const MATERIAL_COLORS = [
-    [/pale_oak/, "#d6d2cc"],
-    [/dark_oak/, "#49331d"],
-    [/oak/, "#b8945f"],
-    [/spruce/, "#7a5934"],
-    [/birch/, "#d8cb9e"],
-    [/jungle/, "#a87853"],
-    [/acacia/, "#ba6337"],
-    [/mangrove/, "#773636"],
-    [/cherry/, "#e4b4bc"],
-    [/bamboo/, "#c9b44c"],
-    [/crimson/, "#7e354e"],
-    [/warped/, "#2b6e6c"],
-    [/light_blue/, "#4aa3d8"],
-    [/light_gray/, "#9da09b"],
-    [/white/, "#eaeded"],
-    [/orange/, "#e06c1d"],
-    [/magenta/, "#b83da8"],
-    [/yellow/, "#e5c229"],
-    [/lime/, "#68b824"],
-    [/pink/, "#e588a8"],
-    [/gray/, "#52585b"],
-    [/cyan/, "#1d8694"],
-    [/purple/, "#7a32a8"],
-    [/blue/, "#3446a2"],
-    [/brown/, "#6d4426"],
-    [/green/, "#4f6b24"],
-    [/red_sand/, "#b8622b"],
-    [/red/, "#9e2b25"],
-    [/blackstone/, "#322e36"],
-    [/black/, "#24262a"],
-    [/deepslate/, "#4c4e52"],
-    [/granite/, "#9c6c5c"],
-    [/diorite/, "#cececf"],
-    [/andesite|cobblestone|stone/, "#878a88"],
-    [/sand/, "#dbd0a0"],
-    [/charcoal/, "#463b32"],
-    [/coal/, "#2c2c2c"],
-    [/copper/, "#c06b4f"],
-    [/iron/, "#d4d4d4"],
-    [/gold/, "#ebd044"],
-    [/diamond/, "#4ee2d8"],
-    [/emerald/, "#39c964"],
-    [/netherite/, "#474044"],
-    [/amethyst/, "#9b69d4"],
-    [/quartz/, "#ece6dd"],
-    [/prismarine/, "#5da399"],
-    [/obsidian/, "#291e3a"]
-  ];
-
-  function fullId(id) {
-    return String(id || "").startsWith("minecraft:")
-      ? String(id)
-      : `minecraft:${id}`;
-  }
-
-  function colorForItem(id) {
-    const shortId = fullId(id).replace(/^minecraft:/, "");
-
-    for (const [pattern, color] of MATERIAL_COLORS) {
-      if (pattern.test(shortId)) {
-        return color;
-      }
-    }
-
-    let hash = 0;
-    for (let i = 0; i < shortId.length; i++) {
-      hash = (hash * 31 + shortId.charCodeAt(i)) >>> 0;
-    }
-
-    const hue = hash % 360;
-    return `hsl(${hue}, 38%, 52%)`;
-  }
-
-  function formatQuantity(amount, unitMode) {
-    const n = Math.max(0, Math.floor(Number(amount) || 0));
-
-    if (unitMode === "stacks" && n >= 64) {
-      const stacks = Math.floor(n / 64);
-      const rest = n % 64;
-      const label = stacks === 1 ? "1 Stack" : `${stacks} Stacks`;
-      return rest > 0 ? `${label} + ${rest}` : label;
-    }
-
-    if (unitMode === "shulkers" && n >= 1728) {
-      const shulkers = Math.floor(n / 1728);
-      const restAfterShulker = n % 1728;
-      const stacks = Math.floor(restAfterShulker / 64);
-      const rest = restAfterShulker % 64;
-      const parts = [`${shulkers} Shulker`];
-      if (stacks > 0) {
-        parts.push(stacks === 1 ? "1 Stack" : `${stacks} Stacks`);
-      }
-      if (rest > 0) {
-        parts.push(`${rest}`);
-      }
-      return parts.join(" + ");
-    }
-
-    if (unitMode === "shulkers" && n >= 64) {
-      const stacks = Math.floor(n / 64);
-      const rest = n % 64;
-      const label = stacks === 1 ? "1 Stack" : `${stacks} Stacks`;
-      return rest > 0 ? `${label} + ${rest}` : label;
-    }
-
-    return String(n);
-  }
-
-  function optionsFor(ingredient) {
-    if (ingredient?.item) {
-      return [ingredient.item];
-    }
-
-    if (Array.isArray(ingredient?.alternatives)) {
-      return [
-        ...new Set(
-          ingredient.alternatives.flatMap(optionsFor)
-        )
-      ];
-    }
-
-    return [];
-  }
-
-  function describeIngredientGroup(optionIds, rawIngredient) {
-    const ids = (optionIds || []).map(id =>
-      fullId(id).replace(/^minecraft:/, "")
-    );
-
-    const tag = rawIngredient?.tag
-      ? fullId(rawIngredient.tag).replace(/^minecraft:/, "")
-      : "";
-
-    const tagLabels = {
-      planks: de ? "Beliebige Holzbretter" : "Any Wooden Planks",
-      logs: de ? "Beliebige Stämme" : "Any Logs",
-      logs_that_burn: de ? "Beliebige Stämme" : "Any Logs",
-      wooden_slabs: de ? "Beliebige Holzstufen" : "Any Wooden Slabs",
-      wooden_stairs: de ? "Beliebige Holztreppen" : "Any Wooden Stairs",
-      wool: de ? "Beliebige Wolle" : "Any Wool",
-      stone_tool_materials: de
-        ? "Bruchstein / Tiefenschiefer / Schwarzstein"
-        : "Cobblestone / Deepslate / Blackstone",
-      stone_crafting_materials: de
-        ? "Bruchstein / Tiefenschiefer / Schwarzstein"
-        : "Cobblestone / Deepslate / Blackstone",
-      coals: de ? "Kohle oder Holzkohle" : "Coal or Charcoal",
-      sand: de ? "Beliebiger Sand" : "Any Sand",
-      smelts_to_glass: de ? "Sand oder Roter Sand" : "Sand or Red Sand",
-      flowers: de ? "Beliebige Blume" : "Any Flower",
-      small_flowers: de ? "Beliebige Blume" : "Any Flower",
-      saplings: de ? "Beliebiger Setzling" : "Any Sapling"
-    };
-
-    if (tag && tagLabels[tag]) {
-      return tagLabels[tag];
-    }
-
-    if (ids.length === 0) {
-      return tag ? (de ? `Gruppe ${tag}` : `Group ${tag}`) : "";
-    }
-
-    if (ids.length === 1) {
-      return nameOf(ids[0]);
-    }
-
-    const every = fn => ids.every(fn);
-    const idSet = new Set(ids);
-
-    if (every(id => id.endsWith("_planks"))) {
-      return de ? "Beliebige Holzbretter" : "Any Wooden Planks";
-    }
-
-    if (
-      every(
-        id =>
-          id.endsWith("_log") ||
-          id.endsWith("_stem") ||
-          id.endsWith("_wood") ||
-          id.endsWith("_hyphae")
-      )
-    ) {
-      return de ? "Beliebige Stämme / Holz" : "Any Logs / Wood";
-    }
-
-    if (every(id => id.endsWith("_slab"))) {
-      const woodPrefixes = [
-        "oak_",
-        "spruce_",
-        "birch_",
-        "jungle_",
-        "acacia_",
-        "dark_oak_",
-        "mangrove_",
-        "cherry_",
-        "pale_oak_",
-        "bamboo_",
-        "crimson_",
-        "warped_"
-      ];
-
-      if (every(id => woodPrefixes.some(prefix => id.startsWith(prefix)))) {
-        return de ? "Beliebige Holzstufen" : "Any Wooden Slabs";
-      }
-
-      return de ? "Beliebige Stufen" : "Any Slabs";
-    }
-
-    if (every(id => id.endsWith("_wool"))) {
-      return de ? "Beliebige Wolle" : "Any Wool";
-    }
-
-    if (every(id => id.endsWith("_carpet"))) {
-      return de ? "Beliebiger Teppich" : "Any Carpet";
-    }
-
-    if (every(id => id.endsWith("_bed"))) {
-      return de ? "Beliebiges Bett" : "Any Bed";
-    }
-
-    if (every(id => id.endsWith("_banner"))) {
-      return de ? "Beliebiges Banner" : "Any Banner";
-    }
-
-    if (every(id => id.endsWith("_glazed_terracotta"))) {
-      return de ? "Beliebige glasierte Keramik" : "Any Glazed Terracotta";
-    }
-
-    if (every(id => id.endsWith("_terracotta"))) {
-      return de ? "Beliebige Keramik" : "Any Terracotta";
-    }
-
-    if (every(id => id.endsWith("_concrete_powder"))) {
-      return de ? "Beliebiger Trockenbeton" : "Any Concrete Powder";
-    }
-
-    if (every(id => id.endsWith("_concrete"))) {
-      return de ? "Beliebiger Beton" : "Any Concrete";
-    }
-
-    if (every(id => id === "glass" || id.endsWith("_stained_glass"))) {
-      return de ? "Beliebiges Glas" : "Any Glass";
-    }
-
-    if (
-      every(id => id === "glass_pane" || id.endsWith("_stained_glass_pane"))
-    ) {
-      return de ? "Beliebige Glasscheibe" : "Any Glass Pane";
-    }
-
-    if (every(id => id.endsWith("_candle"))) {
-      return de ? "Beliebige Kerze" : "Any Candle";
-    }
-
-    if (every(id => id.endsWith("_shulker_box"))) {
-      return de ? "Beliebige Shulker-Kiste" : "Any Shulker Box";
-    }
-
-    if (
-      every(
-        id =>
-          id.endsWith("_sapling") ||
-          id === "mangrove_propagule" ||
-          id === "azalea" ||
-          id === "flowering_azalea"
-      )
-    ) {
-      return de ? "Beliebiger Setzling" : "Any Sapling";
-    }
-
-    if (every(id => id.endsWith("_dye"))) {
-      return de ? "Beliebiger Farbstoff" : "Any Dye";
-    }
-
-    if (
-      ids.length === 2 &&
-      idSet.has("coal") &&
-      idSet.has("charcoal")
-    ) {
-      return de ? "Kohle oder Holzkohle" : "Coal or Charcoal";
-    }
-
-    if (
-      ids.length === 2 &&
-      idSet.has("sand") &&
-      idSet.has("red_sand")
-    ) {
-      return de ? "Sand oder Roter Sand" : "Sand or Red Sand";
-    }
-
-    if (
-      every(id =>
-        ["cobblestone", "cobbled_deepslate", "blackstone"].includes(id)
-      )
-    ) {
-      return de
-        ? "Bruchstein / Tiefenschiefer / Schwarzstein"
-        : "Cobblestone / Deepslate / Blackstone";
-    }
-
-    if (ids.length === 2) {
-      return de
-        ? `${nameOf(ids[0])} oder ${nameOf(ids[1])}`
-        : `${nameOf(ids[0])} or ${nameOf(ids[1])}`;
-    }
-
-    return de
-      ? `Beliebige Zutat (${ids.length} Varianten)`
-      : `Any ingredient (${ids.length} variants)`;
-  }
-
-  function summarizeRecipeIngredients(recipe) {
-    if (!recipe || !Array.isArray(recipe.ingredients)) {
-      return "";
-    }
-
-    const groups = new Map();
-
-    for (const ingredient of recipe.ingredients) {
-      const options = optionsFor(ingredient);
-      const label =
-        options.length === 1
-          ? nameOf(options[0])
-          : describeIngredientGroup(options, ingredient);
-
-      if (!label) continue;
-      groups.set(label, (groups.get(label) || 0) + 1);
-    }
-
-    return [...groups.entries()]
-      .map(([label, count]) => `${count} × ${label}`)
-      .join(" + ");
-  }
-
-  function buildDistinctRecipeOptions(recipes) {
-    const seenSignatures = new Set();
-    const options = [];
-
-    recipes.forEach((recipe, index) => {
-      const ingredientSummary = summarizeRecipeIngredients(recipe);
-      const signature = `${recipe.type}|${recipe.count || 1}|${ingredientSummary}`;
-
-      if (seenSignatures.has(signature)) {
-        return;
-      }
-      seenSignatures.add(signature);
-
-      const station = recipeTypeNames[recipe.type] || recipe.type;
-      const outCount = recipe.count || 1;
-      const label = ingredientSummary
-        ? `${station}: ${ingredientSummary} → ${outCount} ×`
-        : `${station} (${outCount} ×)`;
-
-      options.push({
-        value: String(index),
-        label
-      });
-    });
-
-    return options;
-  }
 
   function createCyclingSlot(optionIds, lockedId = "") {
     const container = document.createElement("div");
@@ -995,12 +96,13 @@ window.createListSummary = function createListSummary(
     container.append(slotMain);
 
     function showIndex(nextIndex, animate = false) {
-      const currentId = fullId(validIds[nextIndex] || validIds[0]);
+      const currentId = H.fullId(validIds[nextIndex] || validIds[0]);
       const isBlock = isBlockById.get(currentId);
       const label = nameOf(currentId);
 
-      blockIcon.style.setProperty("--slot-color", colorForItem(currentId));
+      blockIcon.style.setProperty("--slot-color", H.colorForItem(currentId));
       blockIcon.classList.toggle("is-item", isBlock === false);
+      H.applyItemIcon?.(blockIcon, currentId);
       itemName.textContent = label;
       itemName.title = label;
 
@@ -1099,6 +201,9 @@ window.createListSummary = function createListSummary(
   const choices = list.summaryChoices;
   const inventory = list.summaryInventory;
 
+  let wasSummaryAllDone = false;
+  let notifyCompletionOnDraw = false;
+
   const panel = document.createElement("details");
   panel.className = "list-summary";
   panel.open = list.summaryOpen;
@@ -1163,6 +268,313 @@ window.createListSummary = function createListSummary(
     return "other";
   }
 
+  function openSourceDialog({
+    id,
+    totalNeeded = 0,
+    isFuelItem = false,
+    fuelNeeded = 0,
+    chosenFuel = null,
+    initialFilter = "all",
+    quantityLabel = null
+  }) {
+    const existingDialog = document.getElementById("tc-source-dialog");
+    if (existingDialog) {
+      existingDialog.remove();
+    }
+
+    const normalizedId = H.fullId(id);
+    const source = window.materialSources?.[normalizedId];
+    const ways = Array.isArray(source?.ways) ? source.ways : [];
+    const recipes = H.getEffectiveRecipes(normalizedId, minecraft);
+    const isBlock = isBlockById.get(normalizedId);
+    const itemName = nameOf(normalizedId);
+
+    const dialog = document.createElement("dialog");
+    dialog.id = "tc-source-dialog";
+    dialog.className = "tc-source-dialog";
+
+    const inner = node("div", "tc-dialog-inner");
+
+    // Kopfbereich
+    const header = node("div", "tc-dialog-header");
+    const titleGroup = node("div", "tc-dialog-title-group");
+
+    const icon = node(
+      "span",
+      `tc-item-icon${isBlock === false ? " is-item" : ""}`
+    );
+    icon.style.setProperty("--swatch-color", H.colorForItem(normalizedId));
+    icon.setAttribute("aria-hidden", "true");
+    H.applyItemIcon?.(icon, normalizedId);
+
+    const titleText = node("div", "tc-dialog-title-text");
+    titleText.append(node("h3", "tc-dialog-title", itemName));
+
+    if (totalNeeded > 0) {
+      const prefix = quantityLabel || (de ? "Gesamtbedarf" : "Total needed");
+      titleText.append(
+        node(
+          "span",
+          "tc-dialog-subtitle",
+          `${prefix}: ${H.formatQuantity(totalNeeded, list.summaryUnitMode)} ×`
+        )
+      );
+    }
+
+    titleGroup.append(icon, titleText);
+
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "tc-dialog-close";
+    closeBtn.textContent = "×";
+    closeBtn.title = de ? "Schließen" : "Close";
+    closeBtn.setAttribute("aria-label", closeBtn.title);
+
+    header.append(titleGroup, closeBtn);
+    inner.append(header);
+
+    // Filter-Tabs oben
+    const canonicalOrder = ["location", "farm", "trade", "loot", "craft"];
+    const countsByType = new Map();
+    for (const way of ways) {
+      const type = way.type || "other";
+      countsByType.set(type, (countsByType.get(type) || 0) + 1);
+    }
+
+    const presentTypes = [
+      ...canonicalOrder.filter(type => countsByType.has(type)),
+      ...[...countsByType.keys()].filter(type => !canonicalOrder.includes(type))
+    ];
+
+    let activeFilter =
+      initialFilter !== "all" && countsByType.has(initialFilter)
+        ? initialFilter
+        : "all";
+    let searchQuery = "";
+
+    let tabsBar = null;
+    if (ways.length > 0) {
+      tabsBar = node("div", "tc-dialog-tabs");
+      tabsBar.setAttribute("role", "tablist");
+      tabsBar.setAttribute(
+        "aria-label",
+        de ? "Beschaffungswege filtern" : "Filter acquisition methods"
+      );
+      inner.append(tabsBar);
+    }
+
+    // Suchleiste bei vielen Einträgen (ab 6 Wegen)
+    let searchClearBtn = null;
+    let searchInput = null;
+    if (ways.length >= 6) {
+      const searchWrap = node("div", "tc-dialog-search");
+      searchInput = document.createElement("input");
+      searchInput.type = "search";
+      searchInput.className = "tc-dialog-search-input";
+      searchInput.placeholder = de
+        ? "Biom, Struktur oder Methode filtern …"
+        : "Filter biome, structure or method …";
+      searchInput.setAttribute("aria-label", searchInput.placeholder);
+      searchInput.autocomplete = "off";
+
+      searchClearBtn = document.createElement("button");
+      searchClearBtn.type = "button";
+      searchClearBtn.className = "tc-dialog-search-clear";
+      searchClearBtn.textContent = "×";
+      searchClearBtn.title = de ? "Filter leeren" : "Clear filter";
+      searchClearBtn.setAttribute("aria-label", searchClearBtn.title);
+      searchClearBtn.hidden = true;
+
+      searchInput.addEventListener("input", () => {
+        searchQuery = searchInput.value.trim().toLowerCase();
+        searchClearBtn.hidden = searchQuery.length === 0;
+        renderDialogContent();
+      });
+
+      searchClearBtn.addEventListener("click", () => {
+        searchInput.value = "";
+        searchQuery = "";
+        searchClearBtn.hidden = true;
+        renderDialogContent();
+        searchInput.focus();
+      });
+
+      searchWrap.append(searchInput, searchClearBtn);
+      inner.append(searchWrap);
+    }
+
+    // Scrollbarer Inhalt
+    const dialogBody = node("div", "tc-dialog-body");
+
+    if (isFuelItem && fuelNeeded > 0 && chosenFuel) {
+      const ops = chosenFuel.quarters / 4;
+      dialogBody.append(
+        node(
+          "div",
+          "tc-dialog-fuel-note",
+          de
+            ? `Davon werden ${fuelNeeded} × als Brennstoff für Öfen eingeplant (1 Stück = ${ops} Schmelzvorgänge).`
+            : `Includes ${fuelNeeded} × planned as furnace fuel (1 item = ${ops} smelting operations).`
+        )
+      );
+    }
+
+    const waysContainer = node("div", "tc-dialog-ways");
+
+    function renderDialogContent() {
+      if (tabsBar) {
+        tabsBar.replaceChildren();
+
+        const tabItems = [
+          {
+            key: "all",
+            icon: "",
+            label: de ? "Alle" : "All",
+            count: ways.length
+          },
+          ...presentTypes.map(type => {
+            const meta = CATEGORY_META[type];
+            return {
+              key: type,
+              icon: meta?.icon || "",
+              label: meta ? (de ? meta.de : meta.en) : type,
+              count: countsByType.get(type) || 0
+            };
+          })
+        ];
+
+        for (const tab of tabItems) {
+          const isSelected = activeFilter === tab.key;
+          const tabBtn = document.createElement("button");
+          tabBtn.type = "button";
+          tabBtn.role = "tab";
+          tabBtn.className = `tc-dialog-tab${isSelected ? " is-active" : ""}`;
+          tabBtn.setAttribute("aria-selected", String(isSelected));
+
+          if (tab.icon) {
+            tabBtn.append(node("span", "tc-dialog-tab-icon", tab.icon));
+          }
+          tabBtn.append(node("span", "", tab.label));
+          tabBtn.append(node("span", "tc-dialog-tab-count", String(tab.count)));
+
+          tabBtn.addEventListener("click", () => {
+            if (activeFilter === tab.key) return;
+            activeFilter = tab.key;
+            renderDialogContent();
+          });
+
+          tabsBar.append(tabBtn);
+        }
+      }
+
+      waysContainer.replaceChildren();
+
+      const filteredWays = ways.filter(way => {
+        const typeMatches =
+          activeFilter === "all" || (way.type || "other") === activeFilter;
+        if (!typeMatches) return false;
+        if (!searchQuery) return true;
+
+        const text = String(way[language] || way.en || "").toLowerCase();
+        return text.includes(searchQuery);
+      });
+
+      if (filteredWays.length === 0) {
+        waysContainer.append(
+          node(
+            "p",
+            "tc-dialog-empty",
+            de
+              ? "Keine passenden Beschaffungswege für diesen Filter gefunden."
+              : "No matching acquisition methods found for this filter."
+          )
+        );
+        return;
+      }
+
+      for (const way of filteredWays) {
+        const type = way.type || "other";
+        const meta = CATEGORY_META[type];
+        const typeLabel = meta ? (de ? meta.de : meta.en) : type;
+        const badgeText = meta?.icon ? `${meta.icon} ${typeLabel}` : typeLabel;
+
+        const wayCard = node("div", "tc-dialog-way");
+        const badge = node(
+          "span",
+          `tc-dialog-way-badge tc-dialog-way-badge--${type}`,
+          badgeText
+        );
+        const text = node(
+          "p",
+          "tc-dialog-way-text",
+          way[language] || way.en || ""
+        );
+        wayCard.append(badge, text);
+        waysContainer.append(wayCard);
+      }
+    }
+
+    if (ways.length > 0) {
+      renderDialogContent();
+      dialogBody.append(waysContainer);
+    } else if (recipes.length > 0) {
+      const stations = [
+        ...new Set(
+          recipes.map(recipe => recipeTypeNames[recipe.type] || recipe.type)
+        )
+      ].join(", ");
+
+      dialogBody.append(
+        node(
+          "p",
+          "tc-dialog-way-text",
+          de
+            ? `Herstellung über ${stations} möglich. Den kompletten Herstellungsbaum findest du unten unter „Gesamtbedarf & Crafting-Checkliste“.`
+            : `Can be made using ${stations}. Open “Total materials & crafting checklist” below for the full crafting tree.`
+        )
+      );
+    } else if (!isFuelItem) {
+      dialogBody.append(
+        node(
+          "p",
+          "tc-dialog-empty",
+          de
+            ? "Für diesen Gegenstand ist noch kein geprüfter Fundort oder Beschaffungsweg hinterlegt."
+            : "A verified location or acquisition method has not been added for this item yet."
+        )
+      );
+    }
+
+    inner.append(dialogBody);
+    dialog.append(inner);
+
+    const closeDialog = () => {
+      if (dialog.open) {
+        dialog.close();
+      }
+      dialog.remove();
+    };
+
+    closeBtn.addEventListener("click", closeDialog);
+    dialog.addEventListener("click", event => {
+      if (event.target === dialog) {
+        closeDialog();
+      }
+    });
+    dialog.addEventListener("close", () => {
+      dialog.remove();
+    });
+
+    document.body.append(dialog);
+    if (typeof dialog.showModal === "function") {
+      dialog.showModal();
+    } else {
+      dialog.setAttribute("open", "");
+    }
+  }
+
+  window.openMaterialSourceDialog = openSourceDialog;
+
   function selectChoice(
     labelText,
     values,
@@ -1215,6 +627,8 @@ window.createListSummary = function createListSummary(
     stationName = "",
     stationCount = "",
     isGather = false,
+    hasSourceDetails = true,
+    onPillClick = null,
     extraMeta = "",
     unitMode
   }) {
@@ -1232,13 +646,14 @@ window.createListSummary = function createListSummary(
       "span",
       `tc-item-icon${isBlock === false ? " is-item" : ""}`
     );
-    icon.style.setProperty("--swatch-color", colorForItem(id));
+    icon.style.setProperty("--swatch-color", H.colorForItem(id));
     icon.setAttribute("aria-hidden", "true");
+    H.applyItemIcon?.(icon, id);
 
     const labelGroup = node("div", "tc-item-label-group");
     labelGroup.append(
       node("span", "tc-item-name", itemName),
-      node("span", "tc-item-qty", `×${formatQuantity(totalNeeded, unitMode)}`)
+      node("span", "tc-item-qty", `×${H.formatQuantity(totalNeeded, unitMode)}`)
     );
 
     if (extraMeta) {
@@ -1289,6 +704,7 @@ window.createListSummary = function createListSummary(
     const commitHave = () => {
       const parsed = Math.max(0, Math.floor(Number(haveInput.value) || 0));
       setHave(id, parsed);
+      notifyCompletionOnDraw = true;
       save();
       draw();
     };
@@ -1318,6 +734,7 @@ window.createListSummary = function createListSummary(
       } else {
         setHave(id, totalNeeded);
       }
+      notifyCompletionOnDraw = true;
       save();
       draw();
     });
@@ -1326,17 +743,32 @@ window.createListSummary = function createListSummary(
     right.append(counterGroup);
 
     if (stationName) {
-      const pill = node(
-        "span",
-        `tc-station-pill${isGather ? " is-gather" : ""}`
-      );
+      const isClickable = typeof onPillClick === "function";
+      const pill = document.createElement(isClickable ? "button" : "span");
+      if (isClickable) {
+        pill.type = "button";
+        pill.title = de
+          ? `Beschaffungswege für ${itemName} anzeigen`
+          : `Show acquisition methods for ${itemName}`;
+        pill.addEventListener("click", onPillClick);
+      }
+
+      pill.className =
+        `tc-station-pill${isGather ? " is-gather" : ""}${isClickable ? " is-clickable" : ""}${!hasSourceDetails ? " is-empty-source" : ""}`;
+
       pill.append(
         node("span", "tc-station-dot"),
         node("span", "", stationName)
       );
+
       if (stationCount) {
         pill.append(node("span", "tc-station-count", stationCount));
       }
+
+      if (isClickable) {
+        pill.append(node("span", "tc-station-hint-icon", "ⓘ"));
+      }
+
       right.append(pill);
     }
 
@@ -1409,6 +841,7 @@ window.createListSummary = function createListSummary(
       for (const entry of entries) {
         setHave(entry.id, entry.totalNeeded);
       }
+      notifyCompletionOnDraw = true;
       save();
       draw();
     });
@@ -1438,10 +871,12 @@ window.createListSummary = function createListSummary(
         continue;
       }
 
-      add(goalQuantities, fullId(item.blockId), quantity);
+      add(goalQuantities, H.fullId(item.blockId), quantity);
     }
 
     if (goalQuantities.size === 0) {
+      wasSummaryAllDone = false;
+      notifyCompletionOnDraw = false;
       body.append(
         node(
           "p",
@@ -1479,7 +914,7 @@ window.createListSummary = function createListSummary(
 
       graph.set(id, entry);
 
-      const recipes = minecraft.recipes[id] || [];
+      const recipes = H.getEffectiveRecipes(id, minecraft);
 
       if (recipes.length === 0) {
         return;
@@ -1488,7 +923,11 @@ window.createListSummary = function createListSummary(
       let recipeIndex = 0;
 
       if (recipes.length > 1) {
-        const distinctOptions = buildDistinctRecipeOptions(recipes);
+        const distinctOptions = H.buildDistinctRecipeOptions(
+          recipes,
+          nameOf,
+          language
+        );
 
         if (distinctOptions.length === 1) {
           recipeIndex = Number(distinctOptions[0].value);
@@ -1563,7 +1002,7 @@ window.createListSummary = function createListSummary(
       }
 
       for (const [key, group] of ingredientGroups) {
-        const options = optionsFor(group.ingredient);
+        const options = H.optionsFor(group.ingredient);
 
         if (options.length === 0) {
           entry.unresolved = true;
@@ -1580,9 +1019,11 @@ window.createListSummary = function createListSummary(
         if (options.length > 1) {
           const choiceKey = `ingredient:${id}:${key}`;
           const selected = choices[choiceKey];
-          const groupLabel = describeIngredientGroup(
+          const groupLabel = H.describeIngredientGroup(
             options,
-            group.ingredient
+            group.ingredient,
+            nameOf,
+            language
           );
 
           const labelHeading = groupLabel
@@ -1791,6 +1232,21 @@ window.createListSummary = function createListSummary(
         ? Math.round((completedEntries / totalEntries) * 100)
         : 0;
 
+    const isSummaryAllDone =
+      totalEntries > 0 && completedEntries === totalEntries;
+
+    if (
+      notifyCompletionOnDraw &&
+      !wasSummaryAllDone &&
+      isSummaryAllDone &&
+      typeof window.openListCompleteDialog === "function"
+    ) {
+      window.openListCompleteDialog(list);
+    }
+
+    wasSummaryAllDone = isSummaryAllDone;
+    notifyCompletionOnDraw = false;
+
     // 1. Kompakte Werkzeugleiste oben
     const toolbar = node("div", "tc-summary-toolbar");
 
@@ -1978,21 +1434,32 @@ window.createListSummary = function createListSummary(
 
               for (const entry of itemsInCat) {
                 const sourceInfo = window.materialSources?.[entry.id];
-                const firstWay = Array.isArray(sourceInfo?.ways)
-                  ? sourceInfo.ways[0]
-                  : null;
+                const waysCount = Array.isArray(sourceInfo?.ways)
+                  ? sourceInfo.ways.length
+                  : 0;
+                const hasDetails = waysCount > 0 || entry.isFuelItem;
 
-                const subHint = entry.isFuelItem
+                const fuelHint = entry.isFuelItem
                   ? (de ? `inkl. ${fuelNeeded} Brennstoff` : `incl. ${fuelNeeded} fuel`)
-                  : (firstWay?.[language] || firstWay?.en || "");
+                  : "";
 
                 container.append(
                   createTeamcraftRow({
                     id: entry.id,
                     totalNeeded: entry.totalNeeded,
                     stationName: sourceCategoryLabels[cat],
+                    stationCount: waysCount > 1 ? `(${waysCount})` : "",
                     isGather: true,
-                    extraMeta: subHint,
+                    hasSourceDetails: hasDetails,
+                    onPillClick: () =>
+                      openSourceDialog({
+                        id: entry.id,
+                        totalNeeded: entry.totalNeeded,
+                        isFuelItem: entry.isFuelItem,
+                        fuelNeeded,
+                        chosenFuel
+                      }),
+                    extraMeta: fuelHint,
                     unitMode: list.summaryUnitMode
                   })
                 );

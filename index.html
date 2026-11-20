@@ -21,8 +21,7 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="brand">
-<img src="./assets/icon.svg" alt="CraftLog Logo" width="32" height="32">
-
+        <img src="./assets/icon.svg" alt="CraftLog Logo" width="32" height="32">
 
         <div>
           <p class="brand-name">CraftLog</p>
@@ -73,29 +72,29 @@
         class="list-navigation"
         aria-label="Listen / Lists"
       ></nav>
-
     </aside>
 
-        <main id="workspace" class="workspace"></main>
+    <main id="workspace" class="workspace"></main>
   </div>
 
   <footer class="site-footer">
-  <div class="footer-inner">
-    <span id="footer-project"></span>
-    <span id="footer-storage"></span>
-    <div id="footer-data" class="footer-data"></div>
-  </div>
-</footer>
-<script src="./planner.js" defer></script>
-<script src="./list-summary.js" defer></script>
-<script src="./app.js" defer></script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .catch((err) => console.error('Service Worker Fehler:', err));
-    });
-  }
-</script>
+    <div class="footer-inner">
+      <span id="footer-project"></span>
+      <span id="footer-storage"></span>
+      <div id="footer-data" class="footer-data"></div>
+    </div>
+  </footer>
+
+  <script src="./recipe-helpers.js" defer></script>
+  <script src="./list-summary.js" defer></script>
+  <script src="./app.js" defer></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .catch((err) => console.error('Service Worker Fehler:', err));
+      });
+    }
+  </script>
 </body>
 </html>
