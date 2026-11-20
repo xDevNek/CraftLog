@@ -4,6 +4,60 @@ const LANGUAGE_KEY = "minecraft-materiallisten-language-v1";
 const THEME_KEY = "materialbuch-theme";
 const VERSION_KEY = "craftlog-app-version";
 
+const SORT_MODES = [
+  "manual",
+  "quantity-desc",
+  "quantity-asc",
+  "name-asc",
+  "name-desc"
+];
+
+const LITEMATICA_ALIASES = {
+  "redstone wire": "minecraft:redstone",
+  "redstone dust": "minecraft:redstone",
+  "wall torch": "minecraft:torch",
+  "soul wall torch": "minecraft:soul_torch",
+  "redstone wall torch": "minecraft:redstone_torch",
+  "water": "minecraft:water_bucket",
+  "lava": "minecraft:lava_bucket",
+  "sweet berry bush": "minecraft:sweet_berries",
+  "cocoa": "minecraft:cocoa_beans",
+  "carrots": "minecraft:carrot",
+  "potatoes": "minecraft:potato",
+  "beetroots": "minecraft:beetroot_seeds",
+  "wheat": "minecraft:wheat_seeds",
+  "melon stem": "minecraft:melon_seeds",
+  "attached melon stem": "minecraft:melon_seeds",
+  "pumpkin stem": "minecraft:pumpkin_seeds",
+  "attached pumpkin stem": "minecraft:pumpkin_seeds",
+  "tripwire": "minecraft:string",
+  "tall seagrass": "minecraft:seagrass",
+  "kelp plant": "minecraft:kelp",
+  "twisting vines plant": "minecraft:twisting_vines",
+  "weeping vines plant": "minecraft:weeping_vines",
+  "cave vines plant": "minecraft:glow_berries",
+  "cave vines": "minecraft:glow_berries",
+  "big dripleaf stem": "minecraft:big_dripleaf",
+  "bamboo sapling": "minecraft:bamboo",
+  "water cauldron": "minecraft:cauldron",
+  "lava cauldron": "minecraft:cauldron",
+  "powder snow cauldron": "minecraft:cauldron"
+};
+
+const LITEMATICA_SKIP_BLOCKS = new Set([
+  "minecraft:air",
+  "minecraft:cave_air",
+  "minecraft:void_air",
+  "minecraft:structure_void",
+  "minecraft:piston_head",
+  "minecraft:moving_piston",
+  "minecraft:bubble_column",
+  "minecraft:fire",
+  "minecraft:soul_fire",
+  "minecraft:water",
+  "minecraft:lava"
+]);
+
 const SOURCE_CATEGORY_META = {
   location: {
     icon: "⛏️",
@@ -40,9 +94,21 @@ const translations = {
     overview: "Projektübersicht",
     noListsTitle: "Noch keine Liste.",
     noListsText:
-      "Erstelle links deine erste Liste, um Materialien zu planen.",
+      "Erstelle links deine erste Liste oder importiere direkt eine .litematic-Datei bzw. Materialliste (.txt / .csv).",
     listDescription:
       "Plane benötigte Blöcke und Gegenstände für dein Projekt.",
+    duplicate: "Duplizieren",
+    duplicateTitle:
+      "Liste inklusive Notizen und Rezeptwahl als neue Vorlage kopieren",
+    duplicateListName: name =>
+      `${name} (Kopie)`,
+    listDuplicatedNotice: name =>
+      `Liste „${name}“ als Vorlage dupliziert`,
+    notesTitle: "Projekt-Notizen & Koordinaten",
+    notesPlaceholder:
+      "z. B. Baustelle: X 120 / Y 68 / Z -450 · Nether-Tunnel: Blau · Dach: Tiefenschieferziegel …",
+    notesSavedHint: "Automatisch lokal gespeichert",
+    notesClear: "Notizen leeren",
     rename: "Umbenennen",
     delete: "Löschen",
     deleteQuestion: name =>
@@ -60,6 +126,74 @@ const translations = {
     deleteListAction: "Liste löschen",
     keepList: "Behalten",
     close: "Schließen",
+    undoAction: "Rückgängig",
+    undoDismiss: "Hinweis schließen",
+    itemRemovedNotice: label =>
+      `„${label}“ entfernt`,
+    listRemovedNotice: name =>
+      `Liste „${name}“ gelöscht`,
+    backupHeading: "Import & Backup",
+    litematicaImport: "Litematica (.litematic / .txt)",
+    litematicaImportTitle:
+      "Litematica-Bauwerk (.litematic) oder Materialliste (.txt / .csv) direkt als Projekt einlesen",
+    litematicaDialogTitle: "Litematica-Import",
+    litematicaDialogSubtitle: (itemCount, blockCount) =>
+      `${itemCount} ${itemCount === 1 ? "Material" : "Materialien"} · ${blockCount.toLocaleString("de-DE")} Blöcke gesamt`,
+    litematicaListNameLabel: "Projekt- bzw. Listenname",
+    litematicaDefaultListName: "Litematica-Projekt",
+    litematicaQuantityModeLabel: "Zu übernehmende Mengen",
+    litematicaModeTotal: "Gesamtmenge (Total)",
+    litematicaModeMissing: "Nur fehlende (Missing)",
+    litematicaUnmatchedTitle: count =>
+      `${count} ${count === 1 ? "Eintrag" : "Einträge"} nicht im Katalog gefunden (werden übersprungen):`,
+    litematicaNoItemsInMode:
+      "In dieser Auswahl sind keine offenen Mengen enthalten.",
+    litematicaAddToCurrent: "Zur aktuellen Liste",
+    litematicaCreateNew: "Neue Liste erstellen",
+    litematicaInvalidError:
+      "Die Datei konnte nicht als Litematica-Datei (.litematic) oder Materialliste (.txt / .csv) erkannt werden.",
+    litematicaEmptyError:
+      "In dieser Litematica-Datei wurden keine gültigen Materialien gefunden.",
+    litematicaReadError:
+      "Die Litematica-Datei konnte nicht gelesen werden.",
+    litematicaCreatedNotice: (name, count) =>
+      `Liste „${name}“ mit ${count} ${count === 1 ? "Material" : "Materialien"} erstellt`,
+    litematicaMergedNotice: (name, count) =>
+      `${count} ${count === 1 ? "Material" : "Materialien"} zu „${name}“ hinzugefügt`,
+    backupExport: "Backup speichern",
+    backupExportTitle:
+      "Alle Listen als lokale JSON-Datei herunterladen (ohne Cookies)",
+    backupImport: "Backup laden",
+    backupImportTitle:
+      "Gesicherte JSON-Datei vom Gerät wiederherstellen",
+    backupDialogTitle: "Backup wiederherstellen",
+    backupDialogSubtitle: count =>
+      `${count} ${count === 1 ? "Liste" : "Listen"} in der Datei gefunden`,
+    backupDialogText:
+      "Du hast bereits Listen in diesem Browser. Möchtest du die Listen aus dem Backup zusätzlich hinzufügen oder deine aktuellen Listen damit ersetzen?",
+    backupMergeAction: "Listen hinzufügen",
+    backupReplaceAction: "Bestehende ersetzen",
+    backupInvalidError:
+      "Die ausgewählte Datei ist kein gültiges CraftLog-Backup.",
+    backupEmptyError:
+      "In dieser Backup-Datei sind keine Listen enthalten.",
+    backupReadError:
+      "Die Datei konnte nicht gelesen werden.",
+    backupSuccessNotice: count =>
+      `${count} ${count === 1 ? "Liste" : "Listen"} aus Backup geladen`,
+    hideCompleted: "Erledigte ausblenden",
+    hideCompletedCount: count =>
+      `Erledigte ausblenden (${count})`,
+    showCompletedAction: "Erledigte wieder einblenden",
+    allHiddenTitle: "Alle Einträge sind erledigt.",
+    allHiddenText:
+      "Erledigte Einträge sind aktuell ausgeblendet.",
+    sortLabel: "Sortierung",
+    sortManual: "Sortierung: Zuletzt zuerst",
+    sortQuantityDesc: "Menge: Höchste zuerst",
+    sortQuantityAsc: "Menge: Niedrigste zuerst",
+    sortNameAsc: "Name: A → Z",
+    sortNameDesc: "Name: Z → A",
     addHeading: "Material hinzufügen",
     addDescription:
       "Suche einen Eintrag und wähle ihn aus den Vorschlägen.",
@@ -70,6 +204,8 @@ const translations = {
     addPlus64: "+64 hinzufügen (1 Stack)",
     add: "Hinzufügen",
     materials: "Materialien",
+    collapseMaterials: "Materialien einklappen",
+    expandMaterials: "Materialien ausklappen",
     noItemsTitle: "Die Liste ist noch leer.",
     noItemsText:
       "Füge oben einen Block oder Gegenstand hinzu.",
@@ -122,9 +258,21 @@ const translations = {
     overview: "Project overview",
     noListsTitle: "No lists yet.",
     noListsText:
-      "Create your first list on the left to plan materials.",
+      "Create your first list on the left or directly import a .litematic schematic or material list (.txt / .csv).",
     listDescription:
       "Plan the blocks and items needed for your project.",
+    duplicate: "Duplicate",
+    duplicateTitle:
+      "Copy list including notes and recipe choices as a fresh template",
+    duplicateListName: name =>
+      `${name} (Copy)`,
+    listDuplicatedNotice: name =>
+      `Duplicated “${name}” as a template`,
+    notesTitle: "Project notes & coordinates",
+    notesPlaceholder:
+      "e.g. Build site: X 120 / Y 68 / Z -450 · Nether tunnel: Blue · Roof: Deepslate bricks …",
+    notesSavedHint: "Saved locally automatically",
+    notesClear: "Clear notes",
     rename: "Rename",
     delete: "Delete",
     deleteQuestion: name =>
@@ -142,6 +290,74 @@ const translations = {
     deleteListAction: "Delete list",
     keepList: "Keep",
     close: "Close",
+    undoAction: "Undo",
+    undoDismiss: "Dismiss notice",
+    itemRemovedNotice: label =>
+      `Removed “${label}”`,
+    listRemovedNotice: name =>
+      `Deleted list “${name}”`,
+    backupHeading: "Import & backup",
+    litematicaImport: "Litematica (.litematic / .txt)",
+    litematicaImportTitle:
+      "Import a Litematica schematic (.litematic) or material list (.txt / .csv) directly as a project",
+    litematicaDialogTitle: "Litematica import",
+    litematicaDialogSubtitle: (itemCount, blockCount) =>
+      `${itemCount} ${itemCount === 1 ? "material" : "materials"} · ${blockCount.toLocaleString("en-US")} blocks total`,
+    litematicaListNameLabel: "Project / list name",
+    litematicaDefaultListName: "Litematica project",
+    litematicaQuantityModeLabel: "Quantities to import",
+    litematicaModeTotal: "Total required (Total)",
+    litematicaModeMissing: "Missing only (Missing)",
+    litematicaUnmatchedTitle: count =>
+      `${count} ${count === 1 ? "entry" : "entries"} not found in catalog (will be skipped):`,
+    litematicaNoItemsInMode:
+      "No remaining quantities in this selection.",
+    litematicaAddToCurrent: "Add to current list",
+    litematicaCreateNew: "Create new list",
+    litematicaInvalidError:
+      "Could not recognize this file as a Litematica schematic (.litematic) or material list (.txt / .csv).",
+    litematicaEmptyError:
+      "No valid materials were found in this Litematica file.",
+    litematicaReadError:
+      "Could not read the Litematica file.",
+    litematicaCreatedNotice: (name, count) =>
+      `Created list “${name}” with ${count} ${count === 1 ? "material" : "materials"}`,
+    litematicaMergedNotice: (name, count) =>
+      `Added ${count} ${count === 1 ? "material" : "materials"} to “${name}”`,
+    backupExport: "Save backup",
+    backupExportTitle:
+      "Download all lists as a local JSON file (no cookies)",
+    backupImport: "Load backup",
+    backupImportTitle:
+      "Restore a saved JSON backup file from your device",
+    backupDialogTitle: "Restore backup",
+    backupDialogSubtitle: count =>
+      `${count} ${count === 1 ? "list" : "lists"} found in file`,
+    backupDialogText:
+      "You already have lists in this browser. Would you like to add the backup lists to your existing ones or replace your current lists?",
+    backupMergeAction: "Add lists",
+    backupReplaceAction: "Replace existing",
+    backupInvalidError:
+      "The selected file is not a valid CraftLog backup.",
+    backupEmptyError:
+      "This backup file does not contain any lists.",
+    backupReadError:
+      "Could not read the selected file.",
+    backupSuccessNotice: count =>
+      `Loaded ${count} ${count === 1 ? "list" : "lists"} from backup`,
+    hideCompleted: "Hide completed",
+    hideCompletedCount: count =>
+      `Hide completed (${count})`,
+    showCompletedAction: "Show completed entries",
+    allHiddenTitle: "All entries are completed.",
+    allHiddenText:
+      "Completed entries are currently hidden.",
+    sortLabel: "Sort order",
+    sortManual: "Sort: Newest first",
+    sortQuantityDesc: "Quantity: High to low",
+    sortQuantityAsc: "Quantity: Low to high",
+    sortNameAsc: "Name: A → Z",
+    sortNameDesc: "Name: Z → A",
     addHeading: "Add material",
     addDescription:
       "Search for an entry and select it from the suggestions.",
@@ -152,6 +368,8 @@ const translations = {
     addPlus64: "Add +64 (1 Stack)",
     add: "Add",
     materials: "Materials",
+    collapseMaterials: "Collapse materials",
+    expandMaterials: "Expand materials",
     noItemsTitle: "This list is empty.",
     noItemsText: "Add a block or item above.",
     block: "Block",
@@ -208,7 +426,7 @@ try {
   language = "de";
 }
 
-let appVersion = "0.0.21";
+let appVersion = "0.0.32";
 
 try {
   const cachedVersion = localStorage.getItem(VERSION_KEY);
@@ -222,8 +440,13 @@ try {
 let minecraft = null;
 let catalog = [];
 let catalogById = new Map();
+let catalogByLookup = new Map();
 let loadError = false;
 let highlightedItemId = null;
+
+// Flüchtiger Arbeitsspeicher für Rückgängig-Aktionen (keine Cookies)
+let activeToast = null;
+let toastTimerId = null;
 
 const themeToggle = document.querySelector("#theme-toggle");
 
@@ -242,7 +465,13 @@ function loadState() {
     );
 
     if (saved && Array.isArray(saved.lists)) {
-      return saved;
+      return {
+        lists: saved.lists,
+        hideCompleted: Boolean(saved.hideCompleted),
+        sortBy: SORT_MODES.includes(saved.sortBy)
+          ? saved.sortBy
+          : "manual"
+      };
     }
   } catch {
     // Keine gültigen Daten unter dem aktuellen Schlüssel.
@@ -259,14 +488,20 @@ function loadState() {
           Array.isArray(folder.lists)
             ? folder.lists
             : []
-        )
+        ),
+        hideCompleted: false,
+        sortBy: "manual"
       };
     }
   } catch {
     // Keine alten Listen vorhanden.
   }
 
-  return { lists: [] };
+  return {
+    lists: [],
+    hideCompleted: false,
+    sortBy: "manual"
+  };
 }
 
 const state = loadState();
@@ -287,6 +522,1510 @@ function save() {
 }
 
 save();
+
+function clearToast() {
+  if (toastTimerId) {
+    clearTimeout(toastTimerId);
+    toastTimerId = null;
+  }
+  activeToast = null;
+
+  const existing = document.getElementById("craftlog-toast");
+  if (existing) {
+    existing.remove();
+  }
+}
+
+function renderToast() {
+  const existing = document.getElementById("craftlog-toast");
+  if (existing) {
+    existing.remove();
+  }
+
+  if (!activeToast) {
+    return;
+  }
+
+  const toast = document.createElement("div");
+  toast.id = "craftlog-toast";
+  toast.className = "craftlog-toast";
+  toast.setAttribute("role", "status");
+  toast.setAttribute("aria-live", "polite");
+
+  const message = document.createElement("span");
+  message.className = "craftlog-toast-text";
+  message.textContent = activeToast.getMessage();
+
+  const actions = document.createElement("div");
+  actions.className = "craftlog-toast-actions";
+
+  if (typeof activeToast.onUndo === "function") {
+    const undoBtn = document.createElement("button");
+    undoBtn.type = "button";
+    undoBtn.className = "craftlog-toast-undo";
+    undoBtn.textContent = t().undoAction;
+    undoBtn.addEventListener("click", () => {
+      const handler = activeToast?.onUndo;
+      clearToast();
+      if (handler) {
+        handler();
+      }
+    });
+    actions.append(undoBtn);
+  }
+
+  const dismissBtn = document.createElement("button");
+  dismissBtn.type = "button";
+  dismissBtn.className = "craftlog-toast-close";
+  dismissBtn.textContent = "×";
+  dismissBtn.title = t().undoDismiss;
+  dismissBtn.setAttribute("aria-label", t().undoDismiss);
+  dismissBtn.addEventListener("click", clearToast);
+  actions.append(dismissBtn);
+
+  const timerBar = document.createElement("span");
+  timerBar.className = "craftlog-toast-progress";
+  timerBar.style.animationDuration = `${activeToast.duration}ms`;
+
+  toast.append(message, actions, timerBar);
+  document.body.append(toast);
+}
+
+function showToast({ getMessage, onUndo = null, duration = 6000 }) {
+  clearToast();
+
+  activeToast = {
+    getMessage,
+    onUndo,
+    duration
+  };
+
+  renderToast();
+
+  toastTimerId = setTimeout(() => {
+    clearToast();
+  }, duration);
+}
+
+function deleteListWithUndo(list) {
+  if (!list) return;
+
+  const listIndex = state.lists.findIndex(
+    entry => entry.id === list.id
+  );
+  if (listIndex === -1) return;
+
+  const listSnapshot = JSON.parse(JSON.stringify(list));
+  const previousActiveId = activeListId;
+
+  state.lists.splice(listIndex, 1);
+
+  if (activeListId === list.id) {
+    activeListId =
+      state.lists[listIndex]?.id ||
+      state.lists[listIndex - 1]?.id ||
+      state.lists[0]?.id ||
+      null;
+  }
+
+  save();
+  render();
+
+  showToast({
+    getMessage: () => t().listRemovedNotice(listSnapshot.name),
+    onUndo: () => {
+      const insertAt = Math.min(listIndex, state.lists.length);
+      state.lists.splice(insertAt, 0, listSnapshot);
+      activeListId = previousActiveId || listSnapshot.id;
+      save();
+      render();
+    }
+  });
+}
+
+function duplicateListAsTemplate(list) {
+  if (!list) return;
+
+  const listIndex = state.lists.findIndex(
+    entry => entry.id === list.id
+  );
+
+  const duplicatedItems = Array.isArray(list.items)
+    ? list.items.map(entry => ({
+        id: newId(),
+        blockId: entry.blockId,
+        quantity: entry.quantity,
+        done: false
+      }))
+    : [];
+
+  const copyName = t().duplicateListName(list.name);
+
+  const clonedList = {
+    id: newId(),
+    name: copyName,
+    notes: typeof list.notes === "string" ? list.notes : "",
+    notesOpen: Boolean(list.notes && list.notes.trim()),
+    itemsOpen: typeof list.itemsOpen === "boolean" ? list.itemsOpen : true,
+    items: duplicatedItems,
+    summaryInventory: {}
+  };
+
+  if (
+    list.summaryChoices &&
+    typeof list.summaryChoices === "object"
+  ) {
+    clonedList.summaryChoices = { ...list.summaryChoices };
+  }
+
+  if (typeof list.summaryFuel === "string") {
+    clonedList.summaryFuel = list.summaryFuel;
+  }
+
+  if (typeof list.summaryUnitMode === "string") {
+    clonedList.summaryUnitMode = list.summaryUnitMode;
+  }
+
+  if (typeof list.summaryOpen === "boolean") {
+    clonedList.summaryOpen = list.summaryOpen;
+  }
+
+  if (
+    list.summarySections &&
+    typeof list.summarySections === "object"
+  ) {
+    clonedList.summarySections = { ...list.summarySections };
+  }
+
+  const insertAt =
+    listIndex >= 0 ? listIndex + 1 : state.lists.length;
+  state.lists.splice(insertAt, 0, clonedList);
+  activeListId = clonedList.id;
+
+  save();
+  render();
+
+  showToast({
+    getMessage: () => t().listDuplicatedNotice(copyName),
+    duration: 4000
+  });
+}
+
+function normalizeLookupKey(text) {
+  return String(text || "")
+    .toLowerCase()
+    .replace(/^minecraft:/, "")
+    .replace(/[_-]+/g, " ")
+    .replace(/['’".,()]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildCatalogLookup(entries) {
+  const map = new Map();
+
+  for (const entry of entries) {
+    const idSlug = entry.id.replace(/^minecraft:/, "");
+    const keys = [
+      normalizeLookupKey(entry.en),
+      normalizeLookupKey(entry.de),
+      normalizeLookupKey(idSlug)
+    ];
+
+    for (const key of keys) {
+      if (key && !map.has(key)) {
+        map.set(key, entry);
+      }
+    }
+  }
+
+  return map;
+}
+
+function resolveLitematicaEntry(rawName) {
+  const cleaned = String(rawName || "").trim();
+  if (!cleaned) return null;
+
+  if (/^[a-z0-9_:-]+$/i.test(cleaned)) {
+    const directId = normalizeId(cleaned);
+    const byId = catalogById.get(directId);
+    if (byId) return byId;
+
+    const blockToItemId = directId
+      .replace(/_wall_sign$/, "_sign")
+      .replace(/_wall_hanging_sign$/, "_hanging_sign")
+      .replace(/_wall_banner$/, "_banner")
+      .replace(/_wall_head$/, "_head")
+      .replace(/_wall_skull$/, "_skull")
+      .replace(/_wall_fan$/, "_fan");
+
+    if (blockToItemId !== directId && catalogById.has(blockToItemId)) {
+      return catalogById.get(blockToItemId);
+    }
+  }
+
+  const normalized = normalizeLookupKey(cleaned);
+  if (!normalized) return null;
+
+  if (catalogByLookup.has(normalized)) {
+    return catalogByLookup.get(normalized);
+  }
+
+  const aliasId = LITEMATICA_ALIASES[normalized];
+  if (aliasId && catalogById.has(aliasId)) {
+    return catalogById.get(aliasId);
+  }
+
+  if (normalized.includes(" wall ")) {
+    const withoutWall = normalized.replace(/\s+wall\s+/g, " ").trim();
+    if (catalogByLookup.has(withoutWall)) {
+      return catalogByLookup.get(withoutWall);
+    }
+    const wallAlias = LITEMATICA_ALIASES[withoutWall];
+    if (wallAlias && catalogById.has(wallAlias)) {
+      return catalogById.get(wallAlias);
+    }
+  }
+
+  if (normalized.startsWith("potted ")) {
+    const unpotted = normalized.replace(/^potted\s+/, "").trim();
+    if (catalogByLookup.has(unpotted)) {
+      return catalogByLookup.get(unpotted);
+    }
+  }
+
+  return null;
+}
+
+function parseIntegerCell(rawValue) {
+  const digits = String(rawValue || "").replace(/[^\d]/g, "");
+  if (!digits) return null;
+  const num = Number.parseInt(digits, 10);
+  return Number.isSafeInteger(num) && num >= 0 ? num : null;
+}
+
+function parseCsvLine(line, delimiter) {
+  const cells = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === delimiter && !inQuotes) {
+      cells.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+
+  cells.push(current.trim());
+  return cells;
+}
+
+function extractTitleFromFilename(fileName) {
+  const base = String(fileName || "")
+    .replace(/\.(litematic|txt|csv)$/i, "")
+    .replace(/^material[_ -]?list[_ -]?/i, "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return base || t().litematicaDefaultListName;
+}
+
+async function gunzipBufferIfNeeded(arrayBuffer) {
+  const bytes = new Uint8Array(arrayBuffer);
+
+  if (bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b) {
+    if (typeof DecompressionStream !== "function") {
+      throw new Error("DecompressionStream is not supported in this browser.");
+    }
+
+    const decompressedStream = new Blob([bytes])
+      .stream()
+      .pipeThrough(new DecompressionStream("gzip"));
+
+    const uncompressedBuffer = await new Response(decompressedStream).arrayBuffer();
+    return new Uint8Array(uncompressedBuffer);
+  }
+
+  return bytes;
+}
+
+function parseNbtRoot(bytes) {
+  const view = new DataView(
+    bytes.buffer,
+    bytes.byteOffset,
+    bytes.byteLength
+  );
+  const utf8Decoder = new TextDecoder("utf-8");
+  let offset = 0;
+
+  function ensureBytes(count) {
+    if (offset + count > bytes.length) {
+      throw new Error("Unexpected end of NBT data");
+    }
+  }
+
+  function readString() {
+    ensureBytes(2);
+    const len = view.getUint16(offset, false);
+    offset += 2;
+    ensureBytes(len);
+    const str = utf8Decoder.decode(bytes.subarray(offset, offset + len));
+    offset += len;
+    return str;
+  }
+
+  function readPayload(tagType) {
+    switch (tagType) {
+      case 1: {
+        ensureBytes(1);
+        const val = view.getInt8(offset);
+        offset += 1;
+        return val;
+      }
+      case 2: {
+        ensureBytes(2);
+        const val = view.getInt16(offset, false);
+        offset += 2;
+        return val;
+      }
+      case 3: {
+        ensureBytes(4);
+        const val = view.getInt32(offset, false);
+        offset += 4;
+        return val;
+      }
+      case 4: {
+        ensureBytes(8);
+        const val = view.getBigInt64(offset, false);
+        offset += 8;
+        return val;
+      }
+      case 5: {
+        ensureBytes(4);
+        const val = view.getFloat32(offset, false);
+        offset += 4;
+        return val;
+      }
+      case 6: {
+        ensureBytes(8);
+        const val = view.getFloat64(offset, false);
+        offset += 8;
+        return val;
+      }
+      case 7: {
+        ensureBytes(4);
+        const len = view.getInt32(offset, false);
+        if (len < 0) throw new Error("Negative ByteArray length");
+        offset += 4;
+        ensureBytes(len);
+        const arr = bytes.slice(offset, offset + len);
+        offset += len;
+        return arr;
+      }
+      case 8: {
+        return readString();
+      }
+      case 9: {
+        ensureBytes(5);
+        const elemType = view.getInt8(offset);
+        const len = view.getInt32(offset + 1, false);
+        offset += 5;
+        if (len < 0) throw new Error("Negative List length");
+        const list = [];
+        for (let i = 0; i < len; i++) {
+          list.push(readPayload(elemType));
+        }
+        return list;
+      }
+      case 10: {
+        const obj = Object.create(null);
+        while (true) {
+          ensureBytes(1);
+          const childType = view.getInt8(offset);
+          offset += 1;
+          if (childType === 0) {
+            break;
+          }
+          const childName = readString();
+          obj[childName] = readPayload(childType);
+        }
+        return obj;
+      }
+      case 11: {
+        ensureBytes(4);
+        const len = view.getInt32(offset, false);
+        if (len < 0) throw new Error("Negative IntArray length");
+        offset += 4;
+        ensureBytes(len * 4);
+        const arr = new Int32Array(len);
+        for (let i = 0; i < len; i++) {
+          arr[i] = view.getInt32(offset, false);
+          offset += 4;
+        }
+        return arr;
+      }
+      case 12: {
+        ensureBytes(4);
+        const len = view.getInt32(offset, false);
+        if (len < 0) throw new Error("Negative LongArray length");
+        offset += 4;
+        ensureBytes(len * 8);
+        const arr = new Array(len);
+        for (let i = 0; i < len; i++) {
+          arr[i] = view.getBigInt64(offset, false);
+          offset += 8;
+        }
+        return arr;
+      }
+      default:
+        throw new Error(`Unknown NBT tag type: ${tagType}`);
+    }
+  }
+
+  ensureBytes(1);
+  const rootType = view.getInt8(offset);
+  offset += 1;
+
+  if (rootType !== 10) {
+    throw new Error("NBT root is not a TAG_Compound");
+  }
+
+  readString();
+  return readPayload(10);
+}
+
+function getBlockStateContributions(paletteEntry) {
+  if (!paletteEntry || typeof paletteEntry.Name !== "string") {
+    return [];
+  }
+
+  const blockId = normalizeId(paletteEntry.Name.trim());
+  const props = paletteEntry.Properties || {};
+
+  if (LITEMATICA_SKIP_BLOCKS.has(blockId)) {
+    return [];
+  }
+
+  if (props.half === "upper") {
+    return [];
+  }
+
+  if (props.part === "head") {
+    return [];
+  }
+
+  if (blockId.startsWith("minecraft:potted_")) {
+    const plantId = blockId.replace("minecraft:potted_", "minecraft:");
+    return [
+      { rawName: "minecraft:flower_pot", count: 1 },
+      { rawName: plantId, count: 1 }
+    ];
+  }
+
+  let count = 1;
+
+  if (props.type === "double") {
+    count = 2;
+  } else if (props.candles !== undefined) {
+    count = Math.max(1, Number.parseInt(props.candles, 10) || 1);
+  } else if (props.pickles !== undefined) {
+    count = Math.max(1, Number.parseInt(props.pickles, 10) || 1);
+  } else if (props.eggs !== undefined) {
+    count = Math.max(1, Number.parseInt(props.eggs, 10) || 1);
+  } else if (props.flower_amount !== undefined) {
+    count = Math.max(1, Number.parseInt(props.flower_amount, 10) || 1);
+  } else if (props.layers !== undefined) {
+    count = Math.max(1, Number.parseInt(props.layers, 10) || 1);
+  }
+
+  return [{ rawName: blockId, count }];
+}
+
+function countRegionBlocks(region) {
+  const palette = Array.isArray(region?.BlockStatePalette)
+    ? region.BlockStatePalette
+    : null;
+  const blockStates = Array.isArray(region?.BlockStates)
+    ? region.BlockStates
+    : null;
+  const size = region?.Size;
+
+  if (!palette || palette.length === 0 || !blockStates || !size) {
+    return [];
+  }
+
+  const sizeX = Math.abs(Number(size.x) || 0);
+  const sizeY = Math.abs(Number(size.y) || 0);
+  const sizeZ = Math.abs(Number(size.z) || 0);
+  const volume = sizeX * sizeY * sizeZ;
+
+  if (volume <= 0) {
+    return [];
+  }
+
+  const paletteSize = palette.length;
+  const bitsPerEntry = Math.max(
+    2,
+    32 - Math.clz32(Math.max(1, paletteSize - 1))
+  );
+
+  const mask = (1n << BigInt(bitsPerEntry)) - 1n;
+  const stateCounts = new Uint32Array(paletteSize);
+
+  const expectedSpanningLongs = Math.ceil((volume * bitsPerEntry) / 64);
+  const entriesPerLong = Math.floor(64 / bitsPerEntry);
+  const expectedPaddedLongs = Math.ceil(volume / entriesPerLong);
+
+  const usePaddedLayout =
+    blockStates.length !== expectedSpanningLongs &&
+    blockStates.length === expectedPaddedLongs;
+
+  if (usePaddedLayout) {
+    for (let i = 0; i < volume; i++) {
+      const longIndex = Math.floor(i / entriesPerLong);
+      if (longIndex >= blockStates.length) break;
+      const bitOffset = BigInt((i % entriesPerLong) * bitsPerEntry);
+      const word = BigInt.asUintN(64, blockStates[longIndex]);
+      const paletteIndex = Number((word >> bitOffset) & mask);
+      if (paletteIndex < paletteSize) {
+        stateCounts[paletteIndex]++;
+      }
+    }
+  } else {
+    for (let i = 0; i < volume; i++) {
+      const startBit = i * bitsPerEntry;
+      const startArrIndex = Math.floor(startBit / 64);
+      if (startArrIndex >= blockStates.length) break;
+
+      const endArrIndex = Math.floor((startBit + bitsPerEntry - 1) / 64);
+      const startBitOffset = BigInt(startBit % 64);
+      const lowWord = BigInt.asUintN(64, blockStates[startArrIndex]);
+
+      let paletteIndex = 0;
+      if (startArrIndex === endArrIndex || endArrIndex >= blockStates.length) {
+        paletteIndex = Number((lowWord >> startBitOffset) & mask);
+      } else {
+        const highWord = BigInt.asUintN(64, blockStates[endArrIndex]);
+        const endBitOffset = 64n - startBitOffset;
+        paletteIndex = Number(
+          ((lowWord >> startBitOffset) | (highWord << endBitOffset)) & mask
+        );
+      }
+
+      if (paletteIndex < paletteSize) {
+        stateCounts[paletteIndex]++;
+      }
+    }
+  }
+
+  const contributions = [];
+  for (let idx = 0; idx < paletteSize; idx++) {
+    const blockCount = stateCounts[idx];
+    if (blockCount === 0) continue;
+
+    for (const part of getBlockStateContributions(palette[idx])) {
+      contributions.push({
+        rawName: part.rawName,
+        total: blockCount * part.count,
+        missing: blockCount * part.count
+      });
+    }
+  }
+
+  return contributions;
+}
+
+function finalizeLitematicaRows(rawRows, title) {
+  if (!Array.isArray(rawRows) || rawRows.length === 0) {
+    return null;
+  }
+
+  const matchedById = new Map();
+  const unmatched = [];
+
+  for (const row of rawRows) {
+    if (!row || row.total <= 0) continue;
+
+    const entry = resolveLitematicaEntry(row.rawName);
+
+    if (!entry) {
+      unmatched.push(row.rawName.replace(/^minecraft:/, ""));
+      continue;
+    }
+
+    const existing = matchedById.get(entry.id);
+    if (existing) {
+      existing.total += row.total;
+      existing.missing += row.missing;
+    } else {
+      matchedById.set(entry.id, {
+        blockId: entry.id,
+        isBlock: entry.isBlock,
+        total: row.total,
+        missing: row.missing
+      });
+    }
+  }
+
+  return {
+    title,
+    matched: [...matchedById.values()],
+    unmatched: [...new Set(unmatched)]
+  };
+}
+
+async function parseLitematicBinaryFile(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const uncompressedBytes = await gunzipBufferIfNeeded(arrayBuffer);
+  const root = parseNbtRoot(uncompressedBytes);
+
+  if (!root || typeof root.Regions !== "object" || !root.Regions) {
+    return null;
+  }
+
+  const metaName =
+    typeof root.Metadata?.Name === "string" && root.Metadata.Name.trim()
+      ? root.Metadata.Name.trim()
+      : "";
+
+  const title = metaName || extractTitleFromFilename(file.name);
+  const rawRows = [];
+
+  for (const region of Object.values(root.Regions)) {
+    rawRows.push(...countRegionBlocks(region));
+  }
+
+  return finalizeLitematicaRows(rawRows, title);
+}
+
+function parseLitematicaContent(rawText, fileName = "") {
+  const text = String(rawText || "").replace(/^\uFEFF/, "");
+  const lines = text
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean);
+
+  if (lines.length === 0) {
+    return null;
+  }
+
+  let detectedTitle = "";
+  const rawRows = [];
+  const headerWords = new Set([
+    "item",
+    "items",
+    "block",
+    "material",
+    "gegenstand",
+    "name"
+  ]);
+
+  const isAsciiTable = lines.some(
+    line => line.startsWith("|") && line.endsWith("|")
+  );
+
+  if (isAsciiTable) {
+    for (const line of lines) {
+      if (/^[+=-]+$/.test(line)) {
+        continue;
+      }
+
+      if (!line.startsWith("|") || !line.endsWith("|")) {
+        continue;
+      }
+
+      const cells = line
+        .slice(1, -1)
+        .split("|")
+        .map(cell => cell.trim());
+
+      if (cells.length === 0 || !cells[0]) {
+        continue;
+      }
+
+      const titleMatch = cells[0].match(
+        /^(?:Material\s+List\s+for|Materialliste\s+f(?:ü|ue)r)\s+['"„“]?(.+?)['"”“]?$/i
+      );
+      if (titleMatch && titleMatch[1]) {
+        detectedTitle = titleMatch[1].trim();
+        continue;
+      }
+
+      if (headerWords.has(cells[0].toLowerCase())) {
+        continue;
+      }
+
+      const total = parseIntegerCell(cells[1]);
+      if (total === null) {
+        continue;
+      }
+
+      const missing =
+        cells.length >= 3 ? parseIntegerCell(cells[2]) : total;
+
+      rawRows.push({
+        rawName: cells[0],
+        total,
+        missing: missing !== null ? missing : total
+      });
+    }
+  } else {
+    const firstLine = lines[0];
+    const commaCount = (firstLine.match(/,/g) || []).length;
+    const semiCount = (firstLine.match(/;/g) || []).length;
+    const delimiter = semiCount > commaCount ? ";" : ",";
+
+    for (const line of lines) {
+      if (line.startsWith("#")) {
+        continue;
+      }
+
+      const cells = parseCsvLine(line, delimiter);
+      if (cells.length < 2 || !cells[0]) {
+        continue;
+      }
+
+      if (headerWords.has(cells[0].toLowerCase())) {
+        continue;
+      }
+
+      const total = parseIntegerCell(cells[1]);
+      if (total === null) {
+        continue;
+      }
+
+      const missing =
+        cells.length >= 3 ? parseIntegerCell(cells[2]) : total;
+
+      rawRows.push({
+        rawName: cells[0],
+        total,
+        missing: missing !== null ? missing : total
+      });
+    }
+  }
+
+  return finalizeLitematicaRows(
+    rawRows,
+    detectedTitle || extractTitleFromFilename(fileName)
+  );
+}
+
+function openLitematicaImportDialog(parsed) {
+  const existingDialog = document.getElementById("craftlog-litematica-dialog");
+  if (existingDialog) {
+    existingDialog.remove();
+  }
+
+  const hasDifferentMissing = parsed.matched.some(
+    entry => entry.missing !== entry.total
+  );
+
+  let quantityMode = "total";
+
+  function getActiveEntries() {
+    return parsed.matched
+      .map(entry => ({
+        blockId: entry.blockId,
+        isBlock: entry.isBlock,
+        quantity:
+          quantityMode === "missing" ? entry.missing : entry.total
+      }))
+      .filter(entry => entry.quantity > 0);
+  }
+
+  const dialog = document.createElement("dialog");
+  dialog.id = "craftlog-litematica-dialog";
+  dialog.className = "tc-source-dialog litematica-dialog";
+
+  const inner = document.createElement("div");
+  inner.className = "tc-dialog-inner";
+
+  const header = document.createElement("div");
+  header.className = "tc-dialog-header";
+
+  const titleGroup = document.createElement("div");
+  titleGroup.className = "tc-dialog-title-group";
+
+  const badgeIcon = document.createElement("span");
+  badgeIcon.className = "tc-complete-badge";
+  badgeIcon.setAttribute("aria-hidden", "true");
+  badgeIcon.textContent = "📐";
+
+  const titleText = document.createElement("div");
+  titleText.className = "tc-dialog-title-text";
+
+  const title = document.createElement("h3");
+  title.className = "tc-dialog-title";
+  title.textContent = t().litematicaDialogTitle;
+
+  const subtitle = document.createElement("span");
+  subtitle.className = "tc-dialog-subtitle";
+
+  titleText.append(title, subtitle);
+  titleGroup.append(badgeIcon, titleText);
+
+  const closeBtn = document.createElement("button");
+  closeBtn.type = "button";
+  closeBtn.className = "tc-dialog-close";
+  closeBtn.textContent = "×";
+  closeBtn.title = t().close;
+  closeBtn.setAttribute("aria-label", t().close);
+
+  header.append(titleGroup, closeBtn);
+  inner.append(header);
+
+  const dialogBody = document.createElement("div");
+  dialogBody.className = "tc-dialog-body litematica-dialog-body";
+
+  const nameField = document.createElement("label");
+  nameField.className = "litematica-field";
+
+  const nameLabel = document.createElement("span");
+  nameLabel.className = "litematica-field-label";
+  nameLabel.textContent = t().litematicaListNameLabel;
+
+  const nameInput = document.createElement("input");
+  nameInput.type = "text";
+  nameInput.className = "litematica-name-input";
+  nameInput.value = parsed.title;
+  nameInput.placeholder = t().litematicaDefaultListName;
+
+  nameField.append(nameLabel, nameInput);
+  dialogBody.append(nameField);
+
+  if (hasDifferentMissing) {
+    const modeRow = document.createElement("div");
+    modeRow.className = "litematica-mode-row";
+
+    const modeLabel = document.createElement("span");
+    modeLabel.className = "litematica-field-label";
+    modeLabel.textContent = t().litematicaQuantityModeLabel;
+
+    const modeSwitch = document.createElement("div");
+    modeSwitch.className = "litematica-mode-switch";
+
+    const totalBtn = document.createElement("button");
+    totalBtn.type = "button";
+    totalBtn.className = "litematica-mode-btn is-active";
+    totalBtn.textContent = t().litematicaModeTotal;
+
+    const missingBtn = document.createElement("button");
+    missingBtn.type = "button";
+    missingBtn.className = "litematica-mode-btn";
+    missingBtn.textContent = t().litematicaModeMissing;
+
+    totalBtn.addEventListener("click", () => {
+      quantityMode = "total";
+      totalBtn.classList.add("is-active");
+      missingBtn.classList.remove("is-active");
+      refreshPreview();
+    });
+
+    missingBtn.addEventListener("click", () => {
+      quantityMode = "missing";
+      missingBtn.classList.add("is-active");
+      totalBtn.classList.remove("is-active");
+      refreshPreview();
+    });
+
+    modeSwitch.append(totalBtn, missingBtn);
+    modeRow.append(modeLabel, modeSwitch);
+    dialogBody.append(modeRow);
+  }
+
+  const previewList = document.createElement("div");
+  previewList.className = "litematica-preview-list";
+  dialogBody.append(previewList);
+
+  if (parsed.unmatched.length > 0) {
+    const warning = document.createElement("div");
+    warning.className = "litematica-unmatched-box";
+
+    const warnTitle = document.createElement("strong");
+    warnTitle.textContent = t().litematicaUnmatchedTitle(
+      parsed.unmatched.length
+    );
+
+    const warnText = document.createElement("span");
+    warnText.textContent = parsed.unmatched.join(", ");
+
+    warning.append(warnTitle, warnText);
+    dialogBody.append(warning);
+  }
+
+  const actions = document.createElement("div");
+  actions.className = "tc-dialog-actions";
+
+  const closeDialog = () => {
+    if (dialog.open) {
+      dialog.close();
+    }
+    dialog.remove();
+  };
+
+  const cancelBtn = makeButton(
+    t().cancel,
+    "quiet-button",
+    closeDialog
+  );
+
+  const currentList = state.lists.find(
+    entry => entry.id === activeListId
+  );
+
+  let addToCurrentBtn = null;
+  if (currentList) {
+    addToCurrentBtn = makeButton(
+      t().litematicaAddToCurrent,
+      "quiet-button",
+      () => {
+        const entries = getActiveEntries();
+        if (entries.length === 0) return;
+
+        if (!Array.isArray(currentList.items)) {
+          currentList.items = [];
+        }
+
+        for (const imported of entries) {
+          const normalized = normalizeId(imported.blockId);
+          const existing = currentList.items.find(
+            item => normalizeId(item.blockId) === normalized
+          );
+
+          if (existing) {
+            existing.quantity += imported.quantity;
+            existing.done = false;
+          } else {
+            currentList.items.push({
+              id: newId(),
+              blockId: imported.blockId,
+              quantity: imported.quantity,
+              done: false
+            });
+          }
+        }
+
+        currentList.itemsOpen = true;
+        closeDialog();
+        save();
+        render();
+
+        showToast({
+          getMessage: () =>
+            t().litematicaMergedNotice(currentList.name, entries.length),
+          duration: 4500
+        });
+      }
+    );
+  }
+
+  const createNewBtn = makeButton(
+    t().litematicaCreateNew,
+    "primary-button",
+    () => {
+      const entries = getActiveEntries();
+      if (entries.length === 0) return;
+
+      const listName =
+        nameInput.value.trim() || t().litematicaDefaultListName;
+
+      const createdList = {
+        id: newId(),
+        name: listName,
+        itemsOpen: true,
+        items: entries.map(entry => ({
+          id: newId(),
+          blockId: entry.blockId,
+          quantity: entry.quantity,
+          done: false
+        }))
+      };
+
+      state.lists.push(createdList);
+      activeListId = createdList.id;
+
+      closeDialog();
+      save();
+      render();
+
+      showToast({
+        getMessage: () =>
+          t().litematicaCreatedNotice(listName, entries.length),
+        duration: 4500
+      });
+    }
+  );
+
+  actions.append(cancelBtn);
+  if (addToCurrentBtn) {
+    actions.append(addToCurrentBtn);
+  }
+  actions.append(createNewBtn);
+  dialogBody.append(actions);
+
+  inner.append(dialogBody);
+  dialog.append(inner);
+
+  function refreshPreview() {
+    const entries = getActiveEntries()
+      .slice()
+      .sort((a, b) => b.quantity - a.quantity);
+
+    const totalBlocks = entries.reduce(
+      (sum, entry) => sum + entry.quantity,
+      0
+    );
+
+    subtitle.textContent = t().litematicaDialogSubtitle(
+      entries.length,
+      totalBlocks
+    );
+
+    previewList.replaceChildren();
+
+    if (entries.length === 0) {
+      const emptyNote = document.createElement("p");
+      emptyNote.className = "litematica-preview-empty";
+      emptyNote.textContent = t().litematicaNoItemsInMode;
+      previewList.append(emptyNote);
+      createNewBtn.disabled = true;
+      if (addToCurrentBtn) addToCurrentBtn.disabled = true;
+      return;
+    }
+
+    createNewBtn.disabled = false;
+    if (addToCurrentBtn) addToCurrentBtn.disabled = false;
+
+    for (const entry of entries) {
+      const row = document.createElement("div");
+      row.className = "litematica-preview-row";
+
+      const left = document.createElement("span");
+      left.className = "litematica-preview-item";
+
+      const icon = createItemIcon(entry.blockId, entry.isBlock);
+      const itemTitle = document.createElement("span");
+      itemTitle.className = "litematica-preview-name";
+      itemTitle.textContent = nameOf(entry.blockId);
+
+      left.append(icon, itemTitle);
+
+      const qty = document.createElement("span");
+      qty.className = "litematica-preview-qty";
+      const stackHint = formatStackHint(entry.quantity);
+      qty.textContent = stackHint
+        ? `${entry.quantity} × (${stackHint})`
+        : `${entry.quantity} ×`;
+
+      row.append(left, qty);
+      previewList.append(row);
+    }
+  }
+
+  refreshPreview();
+
+  closeBtn.addEventListener("click", closeDialog);
+  dialog.addEventListener("click", event => {
+    if (event.target === dialog) {
+      closeDialog();
+    }
+  });
+  dialog.addEventListener("close", () => {
+    dialog.remove();
+  });
+
+  document.body.append(dialog);
+  if (typeof dialog.showModal === "function") {
+    dialog.showModal();
+  } else {
+    dialog.setAttribute("open", "");
+  }
+}
+
+async function handleLitematicaFileSelection(file) {
+  if (!file) return;
+
+  try {
+    const isBinaryLitematic = /\.litematic$/i.test(file.name);
+    let parsed = null;
+
+    if (isBinaryLitematic) {
+      parsed = await parseLitematicBinaryFile(file);
+    } else {
+      const rawText = await file.text();
+      parsed = parseLitematicaContent(rawText, file.name);
+    }
+
+    if (!parsed) {
+      alert(t().litematicaInvalidError);
+      return;
+    }
+
+    if (parsed.matched.length === 0) {
+      alert(t().litematicaEmptyError);
+      return;
+    }
+
+    openLitematicaImportDialog(parsed);
+  } catch (error) {
+    console.error("Litematica-Import fehlgeschlagen:", error);
+    alert(t().litematicaReadError);
+  }
+}
+
+function triggerLitematicaPicker() {
+  if (!minecraft) return;
+
+  const picker = document.createElement("input");
+  picker.type = "file";
+  picker.accept = ".litematic,.txt,.csv,text/plain,text/csv,application/octet-stream";
+  picker.hidden = true;
+
+  picker.addEventListener("change", async () => {
+    const selectedFile = picker.files?.[0];
+    picker.remove();
+    await handleLitematicaFileSelection(selectedFile);
+  });
+
+  document.body.append(picker);
+  picker.click();
+}
+
+function exportBackupFile() {
+  const dateStamp = new Date().toISOString().slice(0, 10);
+  const payload = {
+    app: "CraftLog",
+    formatVersion: 1,
+    exportedAt: new Date().toISOString(),
+    lists: state.lists
+  };
+
+  const jsonText = JSON.stringify(payload, null, 2);
+  const blob = new Blob([jsonText], {
+    type: "application/json;charset=utf-8"
+  });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `craftlog-backup-${dateStamp}.json`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 1000);
+}
+
+function sanitizeImportedLists(rawLists) {
+  if (!Array.isArray(rawLists)) {
+    return null;
+  }
+
+  const sanitized = [];
+
+  for (const rawList of rawLists) {
+    if (!rawList || typeof rawList !== "object") {
+      continue;
+    }
+
+    const name =
+      typeof rawList.name === "string" && rawList.name.trim()
+        ? rawList.name.trim()
+        : null;
+
+    if (!name || !Array.isArray(rawList.items)) {
+      continue;
+    }
+
+    const cleanItems = [];
+    for (const rawItem of rawList.items) {
+      if (!rawItem || typeof rawItem !== "object") {
+        continue;
+      }
+
+      const blockId =
+        typeof rawItem.blockId === "string" && rawItem.blockId.trim()
+          ? rawItem.blockId.trim()
+          : null;
+      const quantity = Number(rawItem.quantity);
+
+      if (
+        !blockId ||
+        !Number.isSafeInteger(quantity) ||
+        quantity < 1
+      ) {
+        continue;
+      }
+
+      cleanItems.push({
+        id:
+          typeof rawItem.id === "string" && rawItem.id.trim()
+            ? rawItem.id
+            : newId(),
+        blockId,
+        quantity,
+        done: Boolean(rawItem.done)
+      });
+    }
+
+    const cleanList = {
+      id:
+        typeof rawList.id === "string" && rawList.id.trim()
+          ? rawList.id
+          : newId(),
+      name,
+      items: cleanItems
+    };
+
+    if (typeof rawList.notes === "string") {
+      cleanList.notes = rawList.notes;
+    }
+
+    if (typeof rawList.notesOpen === "boolean") {
+      cleanList.notesOpen = rawList.notesOpen;
+    }
+
+    if (typeof rawList.itemsOpen === "boolean") {
+      cleanList.itemsOpen = rawList.itemsOpen;
+    }
+
+    if (
+      rawList.summaryChoices &&
+      typeof rawList.summaryChoices === "object"
+    ) {
+      cleanList.summaryChoices = { ...rawList.summaryChoices };
+    }
+
+    if (
+      rawList.summaryInventory &&
+      typeof rawList.summaryInventory === "object"
+    ) {
+      cleanList.summaryInventory = { ...rawList.summaryInventory };
+    }
+
+    if (typeof rawList.summaryFuel === "string") {
+      cleanList.summaryFuel = rawList.summaryFuel;
+    }
+
+    if (typeof rawList.summaryUnitMode === "string") {
+      cleanList.summaryUnitMode = rawList.summaryUnitMode;
+    }
+
+    if (typeof rawList.summaryOpen === "boolean") {
+      cleanList.summaryOpen = rawList.summaryOpen;
+    }
+
+    if (
+      rawList.summarySections &&
+      typeof rawList.summarySections === "object"
+    ) {
+      cleanList.summarySections = { ...rawList.summarySections };
+    }
+
+    sanitized.push(cleanList);
+  }
+
+  return sanitized;
+}
+
+function applyImportedLists(importedLists, mode) {
+  if (mode === "replace") {
+    state.lists = importedLists;
+    activeListId = state.lists[0]?.id || null;
+  } else {
+    const usedIds = new Set(
+      state.lists.map(entry => entry.id)
+    );
+
+    for (const entry of importedLists) {
+      if (usedIds.has(entry.id)) {
+        entry.id = newId();
+      }
+      usedIds.add(entry.id);
+      state.lists.push(entry);
+    }
+
+    if (!activeListId && state.lists[0]) {
+      activeListId = state.lists[0].id;
+    } else if (importedLists[0]) {
+      activeListId = importedLists[0].id;
+    }
+  }
+
+  clearToast();
+  save();
+  render();
+
+  showToast({
+    getMessage: () => t().backupSuccessNotice(importedLists.length),
+    duration: 4000
+  });
+}
+
+function openBackupImportDialog(importedLists) {
+  const existingDialog = document.getElementById("craftlog-backup-dialog");
+  if (existingDialog) {
+    existingDialog.remove();
+  }
+
+  const dialog = document.createElement("dialog");
+  dialog.id = "craftlog-backup-dialog";
+  dialog.className = "tc-source-dialog";
+
+  const inner = document.createElement("div");
+  inner.className = "tc-dialog-inner";
+
+  const header = document.createElement("div");
+  header.className = "tc-dialog-header";
+
+  const titleGroup = document.createElement("div");
+  titleGroup.className = "tc-dialog-title-group";
+
+  const badgeIcon = document.createElement("span");
+  badgeIcon.className = "tc-complete-badge";
+  badgeIcon.setAttribute("aria-hidden", "true");
+  badgeIcon.textContent = "↑";
+
+  const titleText = document.createElement("div");
+  titleText.className = "tc-dialog-title-text";
+
+  const title = document.createElement("h3");
+  title.className = "tc-dialog-title";
+  title.textContent = t().backupDialogTitle;
+
+  const subtitle = document.createElement("span");
+  subtitle.className = "tc-dialog-subtitle";
+  subtitle.textContent = t().backupDialogSubtitle(importedLists.length);
+
+  titleText.append(title, subtitle);
+  titleGroup.append(badgeIcon, titleText);
+
+  const closeBtn = document.createElement("button");
+  closeBtn.type = "button";
+  closeBtn.className = "tc-dialog-close";
+  closeBtn.textContent = "×";
+  closeBtn.title = t().close;
+  closeBtn.setAttribute("aria-label", t().close);
+
+  header.append(titleGroup, closeBtn);
+  inner.append(header);
+
+  const dialogBody = document.createElement("div");
+  dialogBody.className = "tc-dialog-body";
+
+  const message = document.createElement("p");
+  message.className = "tc-dialog-way-text";
+  message.textContent = t().backupDialogText;
+
+  const actions = document.createElement("div");
+  actions.className = "tc-dialog-actions";
+
+  const closeDialog = () => {
+    if (dialog.open) {
+      dialog.close();
+    }
+    dialog.remove();
+  };
+
+  const cancelBtn = makeButton(
+    t().cancel,
+    "quiet-button",
+    closeDialog
+  );
+
+  const replaceBtn = makeButton(
+    t().backupReplaceAction,
+    "danger-button",
+    () => {
+      closeDialog();
+      applyImportedLists(importedLists, "replace");
+    }
+  );
+
+  const mergeBtn = makeButton(
+    t().backupMergeAction,
+    "primary-button",
+    () => {
+      closeDialog();
+      applyImportedLists(importedLists, "merge");
+    }
+  );
+
+  actions.append(cancelBtn, replaceBtn, mergeBtn);
+  dialogBody.append(message, actions);
+  inner.append(dialogBody);
+  dialog.append(inner);
+
+  closeBtn.addEventListener("click", closeDialog);
+  dialog.addEventListener("click", event => {
+    if (event.target === dialog) {
+      closeDialog();
+    }
+  });
+  dialog.addEventListener("close", () => {
+    dialog.remove();
+  });
+
+  document.body.append(dialog);
+  if (typeof dialog.showModal === "function") {
+    dialog.showModal();
+  } else {
+    dialog.setAttribute("open", "");
+  }
+}
+
+async function handleBackupFileSelection(file) {
+  if (!file) return;
+
+  try {
+    const rawText = await file.text();
+    const parsed = JSON.parse(rawText);
+
+    const rawLists = Array.isArray(parsed)
+      ? parsed
+      : parsed?.lists;
+
+    const importedLists = sanitizeImportedLists(rawLists);
+
+    if (!importedLists) {
+      alert(t().backupInvalidError);
+      return;
+    }
+
+    if (importedLists.length === 0) {
+      alert(t().backupEmptyError);
+      return;
+    }
+
+    if (state.lists.length === 0) {
+      applyImportedLists(importedLists, "replace");
+    } else {
+      openBackupImportDialog(importedLists);
+    }
+  } catch (error) {
+    console.error("Backup-Import fehlgeschlagen:", error);
+    alert(
+      error instanceof SyntaxError
+        ? t().backupInvalidError
+        : t().backupReadError
+    );
+  }
+}
 
 function normalizeId(id) {
   if (typeof id !== "string") {
@@ -354,6 +2093,126 @@ function makeButton(label, className, action) {
   button.addEventListener("click", action);
 
   return button;
+}
+
+function createBackupButton(mode, labelText, titleText, action) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className =
+    `quiet-button sidebar-backup-btn${mode === "litematica" ? " sidebar-litematica-btn" : ""}`;
+  button.title = titleText;
+  button.setAttribute("aria-label", labelText);
+
+  const iconWrap = document.createElement("span");
+  iconWrap.className = "sidebar-backup-btn-icon";
+  iconWrap.setAttribute("aria-hidden", "true");
+
+  if (mode === "litematica") {
+    iconWrap.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>`;
+  } else if (mode === "export") {
+    iconWrap.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>`;
+  } else {
+    iconWrap.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14"/></svg>`;
+  }
+
+  const labelSpan = document.createElement("span");
+  labelSpan.className = "sidebar-backup-btn-text";
+  labelSpan.textContent = labelText;
+
+  button.append(iconWrap, labelSpan);
+  button.addEventListener("click", action);
+
+  return button;
+}
+
+function createProjectNotesPanel(list) {
+  const details = document.createElement("details");
+  details.className = "project-notes-panel";
+  details.open = Boolean(list.notesOpen);
+
+  const summary = document.createElement("summary");
+  summary.className = "project-notes-summary";
+
+  const titleGroup = document.createElement("span");
+  titleGroup.className = "project-notes-summary-left";
+
+  const chevron = document.createElement("span");
+  chevron.className = "project-notes-chevron";
+  chevron.setAttribute("aria-hidden", "true");
+  chevron.textContent = "▸";
+
+  const icon = document.createElement("span");
+  icon.className = "project-notes-icon";
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = "🧭";
+
+  const title = document.createElement("span");
+  title.className = "project-notes-title";
+  title.textContent = t().notesTitle;
+
+  titleGroup.append(chevron, icon, title);
+
+  const preview = document.createElement("span");
+  preview.className = "project-notes-preview";
+
+  function formatPreview(rawText) {
+    return String(rawText || "")
+      .trim()
+      .replace(/\s*\n+\s*/g, " · ");
+  }
+
+  preview.textContent = formatPreview(list.notes);
+  summary.append(titleGroup, preview);
+
+  const body = document.createElement("div");
+  body.className = "project-notes-body";
+
+  const textarea = document.createElement("textarea");
+  textarea.className = "project-notes-textarea";
+  textarea.rows = 3;
+  textarea.placeholder = t().notesPlaceholder;
+  textarea.setAttribute("aria-label", t().notesTitle);
+  textarea.value = typeof list.notes === "string" ? list.notes : "";
+
+  const footer = document.createElement("div");
+  footer.className = "project-notes-footer";
+
+  const hint = document.createElement("span");
+  hint.className = "project-notes-hint";
+  hint.textContent = t().notesSavedHint;
+
+  const clearBtn = document.createElement("button");
+  clearBtn.type = "button";
+  clearBtn.className = "project-notes-clear";
+  clearBtn.textContent = t().notesClear;
+  clearBtn.hidden = textarea.value.trim().length === 0;
+
+  textarea.addEventListener("input", () => {
+    list.notes = textarea.value;
+    preview.textContent = formatPreview(list.notes);
+    clearBtn.hidden = textarea.value.trim().length === 0;
+    save();
+  });
+
+  clearBtn.addEventListener("click", () => {
+    textarea.value = "";
+    list.notes = "";
+    preview.textContent = "";
+    clearBtn.hidden = true;
+    save();
+    textarea.focus();
+  });
+
+  details.addEventListener("toggle", () => {
+    list.notesOpen = details.open;
+    save();
+  });
+
+  footer.append(hint, clearBtn);
+  body.append(textarea, footer);
+  details.append(summary, body);
+
+  return details;
 }
 
 function openListCompleteDialog(list) {
@@ -443,15 +2302,8 @@ function openListCompleteDialog(list) {
     t().deleteListAction,
     "danger-button",
     () => {
-      state.lists = state.lists.filter(
-        entry => entry.id !== list.id
-      );
-      if (activeListId === list.id) {
-        activeListId = state.lists[0]?.id || null;
-      }
       closeDialog();
-      save();
-      render();
+      deleteListWithUndo(list);
     }
   );
 
@@ -866,6 +2718,7 @@ function createSearch(form, quantityInput, list) {
       highlightedItemId = createdItem.id;
     }
 
+    list.itemsOpen = true;
     save();
     render({ focusSearch: true });
   });
@@ -1064,12 +2917,46 @@ function renderItem(list, item) {
     "×",
     "remove-button",
     () => {
-      list.items = list.items.filter(
-        entry => entry.id !== item.id
+      const removedIndex = list.items.findIndex(
+        entry => entry.id === item.id
       );
+      if (removedIndex === -1) return;
+
+      const removedItem = { ...list.items[removedIndex] };
+      const targetListId = list.id;
+
+      list.items.splice(removedIndex, 1);
 
       save();
       render();
+
+      showToast({
+        getMessage: () =>
+          t().itemRemovedNotice(
+            `${removedItem.quantity} × ${nameOf(removedItem.blockId)}`
+          ),
+        onUndo: () => {
+          const targetList = state.lists.find(
+            entry => entry.id === targetListId
+          );
+          if (!targetList) return;
+
+          if (!Array.isArray(targetList.items)) {
+            targetList.items = [];
+          }
+
+          const insertAt = Math.min(
+            removedIndex,
+            targetList.items.length
+          );
+          targetList.items.splice(insertAt, 0, removedItem);
+          activeListId = targetList.id;
+          highlightedItemId = removedItem.id;
+
+          save();
+          render();
+        }
+      });
     }
   );
 
@@ -1153,6 +3040,72 @@ function renderItem(list, item) {
   return card;
 }
 
+function createItemsToolbar(doneCount) {
+  const toolbar = document.createElement("div");
+  toolbar.className = "items-toolbar";
+
+  const hideCompleted = Boolean(state.hideCompleted);
+  const filterBtn = document.createElement("button");
+  filterBtn.type = "button";
+  filterBtn.className =
+    `items-filter-toggle${hideCompleted ? " is-active" : ""}`;
+  filterBtn.setAttribute("aria-pressed", String(hideCompleted));
+
+  const iconSpan = document.createElement("span");
+  iconSpan.className = "items-filter-toggle-icon";
+  iconSpan.setAttribute("aria-hidden", "true");
+  iconSpan.innerHTML = hideCompleted
+    ? `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>`
+    : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`;
+
+  const labelSpan = document.createElement("span");
+  labelSpan.textContent =
+    hideCompleted && doneCount > 0
+      ? t().hideCompletedCount(doneCount)
+      : t().hideCompleted;
+
+  filterBtn.append(iconSpan, labelSpan);
+  filterBtn.addEventListener("click", () => {
+    state.hideCompleted = !Boolean(state.hideCompleted);
+    save();
+    render();
+  });
+
+  const sortSelect = document.createElement("select");
+  sortSelect.className = "items-sort-select";
+  sortSelect.setAttribute("aria-label", t().sortLabel);
+
+  const sortOptions = [
+    { value: "manual", label: t().sortManual },
+    { value: "quantity-desc", label: t().sortQuantityDesc },
+    { value: "quantity-asc", label: t().sortQuantityAsc },
+    { value: "name-asc", label: t().sortNameAsc },
+    { value: "name-desc", label: t().sortNameDesc }
+  ];
+
+  for (const opt of sortOptions) {
+    const option = document.createElement("option");
+    option.value = opt.value;
+    option.textContent = opt.label;
+    sortSelect.append(option);
+  }
+
+  sortSelect.value = SORT_MODES.includes(state.sortBy)
+    ? state.sortBy
+    : "manual";
+
+  sortSelect.addEventListener("change", () => {
+    state.sortBy = SORT_MODES.includes(sortSelect.value)
+      ? sortSelect.value
+      : "manual";
+    save();
+    render();
+  });
+
+  toolbar.append(filterBtn, sortSelect);
+  return toolbar;
+}
+
 function renderWorkspace() {
   const workspace =
     document.querySelector("#workspace");
@@ -1194,8 +3147,19 @@ function renderWorkspace() {
     heading.textContent = t().noListsTitle;
 
     const empty = document.createElement("div");
-    empty.className = "empty-state";
-    empty.textContent = t().noListsText;
+    empty.className = "empty-state empty-filter-state";
+
+    const emptyText = document.createElement("span");
+    emptyText.textContent = t().noListsText;
+
+    const importBtn = makeButton(
+      t().litematicaImport,
+      "quiet-button",
+      triggerLitematicaPicker
+    );
+    importBtn.disabled = !minecraft;
+
+    empty.append(emptyText, importBtn);
 
     workspace.append(
       eyebrow,
@@ -1237,7 +3201,15 @@ function renderWorkspace() {
   const actions = document.createElement("div");
   actions.className = "heading-actions";
 
+  const duplicateBtn = makeButton(
+    t().duplicate,
+    "quiet-button",
+    () => duplicateListAsTemplate(list)
+  );
+  duplicateBtn.title = t().duplicateTitle;
+
   actions.append(
+    duplicateBtn,
     makeButton(t().rename, "quiet-button", () => {
       const name = prompt(
         t().renameQuestion,
@@ -1256,17 +3228,13 @@ function renderWorkspace() {
         return;
       }
 
-      state.lists = state.lists.filter(
-        entry => entry.id !== list.id
-      );
-
-      activeListId = state.lists[0]?.id || null;
-      save();
-      render();
+      deleteListWithUndo(list);
     })
   );
 
   headingRow.append(headingText, actions);
+
+  const notesPanel = createProjectNotesPanel(list);
 
   const done = list.items.filter(
     item => item.done
@@ -1398,11 +3366,38 @@ function renderWorkspace() {
   form.append(search, quantityGroup, addButton);
   panel.append(panelHeader, form);
 
+  const isItemsOpen = list.itemsOpen !== false;
+
   const itemsTitle = document.createElement("h2");
   itemsTitle.className =
     "section-label items-heading";
-  itemsTitle.textContent =
-    `${t().materials} · ${list.items.length}`;
+
+  const itemsToggleBtn = document.createElement("button");
+  itemsToggleBtn.type = "button";
+  itemsToggleBtn.className = "items-heading-toggle";
+  itemsToggleBtn.setAttribute("aria-expanded", String(isItemsOpen));
+  itemsToggleBtn.title = isItemsOpen
+    ? t().collapseMaterials
+    : t().expandMaterials;
+
+  const itemsChevron = document.createElement("span");
+  itemsChevron.className = "items-heading-chevron";
+  itemsChevron.setAttribute("aria-hidden", "true");
+  itemsChevron.textContent = isItemsOpen ? "▾" : "▸";
+
+  const itemsLabelText = document.createElement("span");
+  itemsLabelText.textContent = t().materials;
+
+  const itemsLeft = document.createElement("span");
+  itemsLeft.className = "items-heading-left";
+  itemsLeft.append(itemsChevron, itemsLabelText);
+
+  const itemsBadge = document.createElement("span");
+  itemsBadge.className = "items-heading-badge";
+  itemsBadge.textContent = `${done} / ${list.items.length}`;
+
+  itemsToggleBtn.append(itemsLeft, itemsBadge);
+  itemsTitle.append(itemsToggleBtn);
 
   const items = document.createElement("div");
   items.className = "items";
@@ -1433,6 +3428,37 @@ function renderWorkspace() {
     }
   }
 
+  const hideCompleted = Boolean(state.hideCompleted);
+  const sortBy = SORT_MODES.includes(state.sortBy)
+    ? state.sortBy
+    : "manual";
+
+  let visibleItems = hideCompleted
+    ? list.items.filter(item => !item.done)
+    : [...list.items];
+
+  if (sortBy === "quantity-desc") {
+    visibleItems.sort(
+      (a, b) =>
+        b.quantity - a.quantity ||
+        nameOf(a.blockId).localeCompare(nameOf(b.blockId), language)
+    );
+  } else if (sortBy === "quantity-asc") {
+    visibleItems.sort(
+      (a, b) =>
+        a.quantity - b.quantity ||
+        nameOf(a.blockId).localeCompare(nameOf(b.blockId), language)
+    );
+  } else if (sortBy === "name-asc") {
+    visibleItems.sort((a, b) =>
+      nameOf(a.blockId).localeCompare(nameOf(b.blockId), language)
+    );
+  } else if (sortBy === "name-desc") {
+    visibleItems.sort((a, b) =>
+      nameOf(b.blockId).localeCompare(nameOf(a.blockId), language)
+    );
+  }
+
   if (list.items.length === 0) {
     const empty = document.createElement("div");
     empty.className = "empty-state";
@@ -1447,26 +3473,141 @@ function renderWorkspace() {
 
     empty.append(emptyTitle, emptyText);
     items.append(empty);
+  } else if (visibleItems.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state empty-filter-state";
+
+    const emptyTitle =
+      document.createElement("strong");
+    emptyTitle.textContent = t().allHiddenTitle;
+
+    const emptyText =
+      document.createElement("span");
+    emptyText.textContent = t().allHiddenText;
+
+    const showAllBtn = makeButton(
+      t().showCompletedAction,
+      "quiet-button",
+      () => {
+        state.hideCompleted = false;
+        save();
+        render();
+      }
+    );
+
+    empty.append(emptyTitle, emptyText, showAllBtn);
+    items.append(empty);
   } else {
-    for (const item of list.items) {
+    for (const item of visibleItems) {
       items.append(renderItem(list, item));
     }
   }
 
+  const itemsToolbar =
+    list.items.length > 0 ? createItemsToolbar(done) : null;
+
+  if (!isItemsOpen) {
+    items.hidden = true;
+    if (itemsToolbar) {
+      itemsToolbar.hidden = true;
+    }
+  }
+
+  itemsToggleBtn.addEventListener("click", () => {
+    const nextOpen = list.itemsOpen === false;
+    list.itemsOpen = nextOpen;
+    items.hidden = !nextOpen;
+    if (itemsToolbar) {
+      itemsToolbar.hidden = !nextOpen;
+    }
+    itemsChevron.textContent = nextOpen ? "▾" : "▸";
+    itemsToggleBtn.setAttribute("aria-expanded", String(nextOpen));
+    itemsToggleBtn.title = nextOpen
+      ? t().collapseMaterials
+      : t().expandMaterials;
+    save();
+  });
+
   workspace.append(
     status,
     headingRow,
+    notesPanel,
     progress,
     panel,
-    itemsTitle,
-    items
+    itemsTitle
   );
+
+  if (itemsToolbar) {
+    workspace.append(itemsToolbar);
+  }
+
+  workspace.append(items);
 
   // Der Gesamtbedarf steht direkt unter den einzelnen Listeneinträgen.
   if (minecraft) {
     renderSummarySlot();
     workspace.append(summarySlot);
   }
+}
+
+function renderBackupControls(container) {
+  if (!container) return;
+
+  let backupSection = document.getElementById("craftlog-backup-section");
+  if (!backupSection) {
+    backupSection = document.createElement("div");
+    backupSection.id = "craftlog-backup-section";
+    backupSection.className = "sidebar-backup";
+    container.append(backupSection);
+  }
+
+  backupSection.replaceChildren();
+
+  const label = document.createElement("p");
+  label.className = "section-label sidebar-backup-label";
+  label.textContent = t().backupHeading;
+
+  const buttonRow = document.createElement("div");
+  buttonRow.className = "sidebar-backup-actions";
+
+  const litematicaBtn = createBackupButton(
+    "litematica",
+    t().litematicaImport,
+    t().litematicaImportTitle,
+    triggerLitematicaPicker
+  );
+  litematicaBtn.disabled = !minecraft;
+
+  const exportBtn = createBackupButton(
+    "export",
+    t().backupExport,
+    t().backupExportTitle,
+    exportBackupFile
+  );
+  exportBtn.disabled = state.lists.length === 0;
+
+  const fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.accept = ".json,application/json";
+  fileInput.hidden = true;
+
+  fileInput.addEventListener("change", async () => {
+    const selectedFile = fileInput.files?.[0];
+    fileInput.value = "";
+    await handleBackupFileSelection(selectedFile);
+  });
+
+  const importBtn = createBackupButton(
+    "import",
+    t().backupImport,
+    t().backupImportTitle,
+    () => {
+      fileInput.click();
+    }
+  );
+
+  buttonRow.append(litematicaBtn, exportBtn, importBtn, fileInput);
+  backupSection.append(label, buttonRow);
 }
 
 function renderNavigation() {
@@ -1509,6 +3650,8 @@ function renderNavigation() {
 
     navigation.append(button);
   }
+
+  renderBackupControls(navigation.parentElement);
 }
 
 function updateThemeToggle() {
@@ -1613,6 +3756,10 @@ function render(options = {}) {
   renderWorkspace();
   renderFooter();
   updateThemeToggle();
+
+  if (activeToast) {
+    renderToast();
+  }
 
   if (options.focusSearch) {
     const nextSearch = document.querySelector(
@@ -1758,6 +3905,8 @@ async function loadData() {
         entry
       ])
     );
+
+    catalogByLookup = buildCatalogLookup(catalog);
 
     // Beschaffungsdaten sind optional. Listen und
     // Gesamtbedarf funktionieren auch ohne diese Datei.

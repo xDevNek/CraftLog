@@ -203,6 +203,7 @@ window.createListSummary = function createListSummary(
 
   let wasSummaryAllDone = false;
   let notifyCompletionOnDraw = false;
+  let missingChoicesCount = 0;
 
   const panel = document.createElement("details");
   panel.className = "list-summary";
@@ -608,7 +609,18 @@ window.createListSummary = function createListSummary(
       select.append(option);
     }
 
-    select.value = selected || "";
+    const hasValidSelection =
+      selected !== undefined &&
+      selected !== "" &&
+      values.some(item => String(item.value) === String(selected));
+
+    select.value = hasValidSelection ? String(selected) : "";
+
+    if (!hasValidSelection) {
+      missingChoicesCount++;
+      select.classList.add("is-missing");
+      label.classList.add("is-missing");
+    }
 
     select.addEventListener("change", () => {
       onChange(select.value);
@@ -860,14 +872,22 @@ window.createListSummary = function createListSummary(
     const activeInvId =
       document.activeElement?.dataset?.invId || null;
 
+    missingChoicesCount = 0;
     body.replaceChildren();
 
     const goalQuantities = new Map();
+    let hasAnyValidItems = false;
 
     for (const item of list.items || []) {
       const quantity = Number(item.quantity);
 
       if (!Number.isSafeInteger(quantity) || quantity < 1) {
+        continue;
+      }
+
+      hasAnyValidItems = true;
+
+      if (item.done) {
         continue;
       }
 
@@ -881,9 +901,17 @@ window.createListSummary = function createListSummary(
         node(
           "p",
           "list-summary-note",
-          de
-            ? "Füge zuerst Materialien zur Liste hinzu."
-            : "Add materials to the list first."
+          hasAnyValidItems
+            ? (
+              de
+                ? "Alle Materialien in dieser Liste sind bereits abgehakt – kein offener Bedarf mehr."
+                : "All materials in this list are already checked off – nothing left to gather or craft."
+            )
+            : (
+              de
+                ? "Füge zuerst Materialien zur Liste hinzu."
+                : "Add materials to the list first."
+            )
         )
       );
       return;
@@ -1344,15 +1372,20 @@ window.createListSummary = function createListSummary(
 
     // 2. Rezept- & Variantenentscheidungen
     if (choiceBox.childElementCount > 0) {
-      choiceBox.prepend(
-        node(
-          "h3",
-          "",
-          de
-            ? "Entscheidungen für diese Liste"
-            : "Choices for this list"
-        )
-      );
+      const choiceHeading =
+        missingChoicesCount > 0
+          ? (
+            de
+              ? `Entscheidungen für diese Liste (${missingChoicesCount} offen)`
+              : `Choices for this list (${missingChoicesCount} missing)`
+          )
+          : (
+            de
+              ? "Entscheidungen für diese Liste"
+              : "Choices for this list"
+          );
+
+      choiceBox.prepend(node("h3", "", choiceHeading));
       body.append(choiceBox);
     }
 
