@@ -1,5 +1,5 @@
 // WICHTIG: Ändere diese Nummer (z. B. auf 'v2', 'v3'), sobald du Code oder Daten aktualisierst!
-const CACHE_NAME = 'materialbuch-cache-v1';
+const CACHE_NAME = 'CraftLog-cache-v0.0.2';
 
 const ASSETS_TO_CACHE = [
   './',

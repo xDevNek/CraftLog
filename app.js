@@ -45,8 +45,6 @@ const translations = {
     editQuantity: "Anzahl ändern",
     save: "Speichern",
     cancel: "Abbrechen",
-    recipes: "Rezepte anzeigen",
-    noRecipe: "Kein berechenbares Rezept hinterlegt.",
     crafting_shaped: "Werkbank",
     crafting_shapeless: "Werkbank",
     smelting: "Ofen",
@@ -55,16 +53,11 @@ const translations = {
     campfire_cooking: "Lagerfeuer",
     stonecutting: "Steinsäge",
     smithing_transform: "Schmiedetisch",
-    batches: count => `${count} Herstellungsvorgänge`,
-    oneOf: "Eine dieser Zutaten verwenden",
-    result: "Ergebnis",
-    tag: name => `Gruppe ${name}`,
-    unknown: "Unbekannte Zutat",
     source: "Woher bekomme ich das?",
     sourceCount: count =>
       `${count} ${count === 1 ? "Weg" : "Wege"}`,
     sourceCraftableText: stations =>
-      `Herstellung über ${stations} möglich. Die Zutaten stehen unter „Rezepte anzeigen“.`,
+      `Herstellung über ${stations} möglich. Den kompletten Herstellungsbaum findest du unter „Rekursiver Rohstoff-Rechner“.`,
     sourceOpenText:
       "Ein geprüfter Beschaffungsweg ist noch nicht hinterlegt.",
     totalUnavailable:
@@ -120,8 +113,6 @@ const translations = {
     editQuantity: "Edit quantity",
     save: "Save",
     cancel: "Cancel",
-    recipes: "Show recipes",
-    noRecipe: "No calculable recipe available.",
     crafting_shaped: "Crafting Table",
     crafting_shapeless: "Crafting Table",
     smelting: "Furnace",
@@ -130,16 +121,11 @@ const translations = {
     campfire_cooking: "Campfire",
     stonecutting: "Stonecutter",
     smithing_transform: "Smithing Table",
-    batches: count => `${count} crafting operations`,
-    oneOf: "Use one of these ingredients",
-    result: "Result",
-    tag: name => `Group ${name}`,
-    unknown: "Unknown ingredient",
     source: "How do I get this?",
     sourceCount: count =>
       `${count} ${count === 1 ? "way" : "ways"}`,
     sourceCraftableText: stations =>
-      `Can be made using ${stations}. See “Show recipes” for ingredients.`,
+      `Can be made using ${stations}. Open “Recursive raw material calculator” below for the full crafting tree.`,
     sourceOpenText:
       "A verified acquisition method has not been added yet.",
     totalUnavailable:
@@ -270,114 +256,113 @@ function makeButton(label, className, action) {
   return button;
 }
 
-function ingredientOptions(ingredient) {
-  if (ingredient?.item) {
-    return [nameOf(ingredient.item)];
-  }
-
-  if (ingredient?.tag) {
-    return [t().tag(ingredient.tag)];
-  }
-
-  if (Array.isArray(ingredient?.alternatives)) {
-    const names = ingredient.alternatives.flatMap(
-      ingredientOptions
-    );
-
-    return [...new Set(names)];
-  }
-
-  return [t().unknown];
+function normalizeSearchText(text) {
+  return String(text || "")
+    .toLowerCase()
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss")
+    .replace(/^minecraft:/, "")
+    .replace(/_/g, " ")
+    .trim();
 }
 
-function renderRecipe(recipe, requested, resultId) {
-  const perBatch = Number(recipe.count) || 1;
-  const batches = Math.ceil(requested / perBatch);
+function editDistance(a, b) {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
 
-  const card = document.createElement("div");
-  card.className = "recipe-card";
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
 
-  const header = document.createElement("div");
-  header.className = "recipe-card-header";
+  for (let i = 1; i <= a.length; i++) {
+    const curr = [i];
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min(
+        curr[j - 1] + 1,
+        prev[j] + 1,
+        prev[j - 1] + cost
+      );
+    }
+    prev = curr;
+  }
 
-  const station = document.createElement("span");
-  station.className = "recipe-station";
-  station.textContent =
-    t()[recipe.type] || recipe.type;
+  return prev[b.length];
+}
 
-  const batchLabel = document.createElement("span");
-  batchLabel.className = "recipe-batches";
-  batchLabel.textContent = t().batches(batches);
+function scoreTarget(query, tokens, target) {
+  if (!target) return 0;
 
-  header.append(station, batchLabel);
-  card.append(header);
+  if (target === query) return 1000;
+  if (target.startsWith(query)) {
+    return 850 - Math.min(target.length - query.length, 50);
+  }
 
-  const grouped = new Map();
+  const words = target.split(/[\s-]+/);
 
-  for (const ingredient of recipe.ingredients || []) {
-    const key = JSON.stringify(ingredient);
+  if (words.some(word => word.startsWith(query))) {
+    return 700 - Math.min(target.length, 50);
+  }
 
-    if (!grouped.has(key)) {
-      grouped.set(key, {
-        ingredient,
-        count: 0
+  const index = target.indexOf(query);
+  if (index !== -1) {
+    return 550 - Math.min(index, 50);
+  }
+
+  if (tokens.length > 1 && tokens.every(token => target.includes(token))) {
+    return 480 - Math.min(target.length, 50);
+  }
+
+  if (query.length >= 3) {
+    const maxDist = query.length <= 4 ? 1 : query.length <= 7 ? 2 : 3;
+    let bestDist = editDistance(query, target);
+
+    for (const word of words) {
+      if (Math.abs(word.length - query.length) <= maxDist) {
+        bestDist = Math.min(bestDist, editDistance(query, word));
+      }
+    }
+
+    if (bestDist <= maxDist) {
+      return 300 - bestDist * 70 - Math.min(target.length, 40);
+    }
+  }
+
+  return 0;
+}
+
+function searchCatalog(rawQuery) {
+  const query = normalizeSearchText(rawQuery);
+  if (!query) return [];
+
+  const tokens = query.split(/\s+/).filter(Boolean);
+  const results = [];
+
+  for (const entry of catalog) {
+    const deText = entry._searchDe ?? normalizeSearchText(entry.de);
+    const enText = entry._searchEn ?? normalizeSearchText(entry.en || entry.id);
+
+    const primaryText = language === "de" ? deText : enText;
+    const secondaryText = language === "de" ? enText : deText;
+
+    const primaryScore = scoreTarget(query, tokens, primaryText);
+    const secondaryScore = scoreTarget(query, tokens, secondaryText);
+
+    const totalPrimary = primaryScore > 0 ? primaryScore + 25 : 0;
+    const bestScore = Math.max(totalPrimary, secondaryScore);
+
+    if (bestScore > 0) {
+      results.push({
+        entry,
+        score: bestScore,
+        matchedSecondary: secondaryScore > totalPrimary
       });
     }
-
-    grouped.get(key).count++;
   }
 
-  for (const group of grouped.values()) {
-    const row = document.createElement("div");
-    row.className = "recipe-ingredient";
-
-    const amount = document.createElement("span");
-    amount.className = "ingredient-amount";
-    amount.textContent =
-      `${group.count * batches} ×`;
-
-    const content = document.createElement("div");
-    const names = document.createElement("div");
-    names.className = "ingredient-names";
-
-    const options = ingredientOptions(
-      group.ingredient
-    );
-
-    for (const name of options) {
-      const chip = document.createElement("span");
-      chip.className = "ingredient-chip";
-      chip.textContent = name;
-      names.append(chip);
-    }
-
-    content.append(names);
-
-    if (options.length > 1) {
-      const note = document.createElement("p");
-      note.className = "alternative-note";
-      note.textContent = t().oneOf;
-      content.append(note);
-    }
-
-    row.append(amount, content);
-    card.append(row);
-  }
-
-  const output = document.createElement("div");
-  output.className = "recipe-output";
-
-  const outputLabel = document.createElement("span");
-  outputLabel.textContent = t().result;
-
-  const outputAmount = document.createElement("span");
-  outputAmount.textContent =
-    `${batches * perBatch} × ${nameOf(resultId)}`;
-
-  output.append(outputLabel, outputAmount);
-  card.append(output);
-
-  return card;
+  results.sort((a, b) => b.score - a.score);
+  return results;
 }
 
 function createSearch(form, quantityInput, list) {
@@ -414,9 +399,7 @@ function createSearch(form, quantityInput, list) {
   }
 
   function updateSuggestions() {
-    const query = input.value
-      .trim()
-      .toLocaleLowerCase(language);
+    const query = input.value.trim();
 
     suggestions.replaceChildren();
 
@@ -426,20 +409,22 @@ function createSearch(form, quantityInput, list) {
       return;
     }
 
-    matches = catalog.filter(entry =>
-      nameOf(entry.id)
-        .toLocaleLowerCase(language)
-        .includes(query)
-    );
-
+    const searchResults = searchCatalog(query);
+    matches = searchResults.map(result => result.entry);
     activeIndex = 0;
 
-    for (const entry of matches.slice(0, 40)) {
+    for (const { entry, matchedSecondary } of searchResults.slice(0, 40)) {
       const option = document.createElement("button");
       option.type = "button";
 
       const title = document.createElement("span");
-      title.textContent = nameOf(entry.id);
+      const primaryName = nameOf(entry.id);
+      const secondaryName = language === "de" ? entry.en : entry.de;
+
+      title.textContent =
+        matchedSecondary && secondaryName && secondaryName !== primaryName
+          ? `${primaryName} (${secondaryName})`
+          : primaryName;
 
       const type = document.createElement("span");
       type.className = "suggestion-type";
@@ -799,6 +784,29 @@ function renderItem(list, item) {
 
   card.append(createSourcePanel(item));
 
+  const itemId = normalizeId(item.blockId);
+  const hasRecipes = (minecraft?.recipes?.[itemId] || []).length > 0;
+
+  if (
+    minecraft &&
+    hasRecipes &&
+    typeof window.createMaterialPlan === "function"
+  ) {
+    card.append(
+      window.createMaterialPlan(
+        item,
+        minecraft,
+        nameOf,
+        language,
+        save,
+        () => {
+          save();
+          render();
+        }
+      )
+    );
+  }
+
   return card;
 }
 
@@ -1036,34 +1044,33 @@ function renderWorkspace() {
   }
 
   workspace.append(
-  headingRow,
-  status,
-  progress,
-  panel,
-  itemsTitle,
-  items
-);
+    status,
+    headingRow,
+    progress,
+    panel,
+    itemsTitle,
+    items
+  );
 
-// Der Gesamtbedarf steht unter den einzelnen Listeneinträgen.
-if (minecraft) {
-  if (typeof window.createListSummary === "function") {
-    workspace.append(
-      window.createListSummary(
-        list,
-        minecraft,
-        nameOf,
-        language,
-        save
-      )
-    );
-  } else {
-    const error = document.createElement("p");
-    error.className = "status";
-    error.textContent = t().totalUnavailable;
-    workspace.append(error);
+  // Der Gesamtbedarf steht direkt unter den einzelnen Listeneinträgen.
+  if (minecraft) {
+    if (typeof window.createListSummary === "function") {
+      workspace.append(
+        window.createListSummary(
+          list,
+          minecraft,
+          nameOf,
+          language,
+          save
+        )
+      );
+    } else {
+      const error = document.createElement("p");
+      error.className = "status";
+      error.textContent = t().totalUnavailable;
+      workspace.append(error);
+    }
   }
-}
-  workspace.append(itemsTitle, items);
 }
 
 function renderNavigation() {
@@ -1138,7 +1145,6 @@ function updateThemeToggle() {
 }
 
 function renderFooter() {
-  
   const project = document.querySelector(
     "#footer-project"
   );
@@ -1153,7 +1159,7 @@ function renderFooter() {
 
   if (project) {
     project.textContent =
-      "CraftLog · Version 0.0.1";
+      "CraftLog · Version 0.0.2";
   }
 
   if (storage) {
@@ -1178,8 +1184,6 @@ function renderFooter() {
 
     footerData.hidden = !loadError;
   }
-
-  
 }
 
 function render() {
@@ -1210,21 +1214,9 @@ function render() {
   }
 
   renderNavigation();
-renderWorkspace();
-
-// Die bereits erzeugte Gesamtbedarfs-Karte
-// hinter alle Listeneinträge verschieben.
-const totalCard = document.querySelector(
-  "#workspace > .list-summary"
-);
-
-if (totalCard) {
-  document.querySelector("#workspace").append(totalCard);
-}
-
-renderFooter();
-updateThemeToggle();
-
+  renderWorkspace();
+  renderFooter();
+  updateThemeToggle();
 }
 
 document.querySelector(
@@ -1322,7 +1314,11 @@ async function loadData() {
     }
 
     minecraft = data;
-    catalog = data.catalog;
+    catalog = data.catalog.map(entry => ({
+      ...entry,
+      _searchDe: normalizeSearchText(entry.de),
+      _searchEn: normalizeSearchText(entry.en || entry.id)
+    }));
 
     catalogById = new Map(
       catalog.map(entry => [
