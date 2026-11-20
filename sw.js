@@ -1,5 +1,4 @@
-// WICHTIG: Ändere diese Nummer (z. B. auf 'v2', 'v3'), sobald du Code oder Daten aktualisierst!
-const CACHE_NAME = 'CraftLog-cache-v0.0.4';
+const CACHE_NAME = 'CraftLog-cache-v0.0.33';
 
 const ASSETS_TO_CACHE = [
   './',
@@ -9,25 +8,25 @@ const ASSETS_TO_CACHE = [
   './app.js',
   './recipe-helpers.js',
   './list-summary.js',
-  './sources.js',
-  './survival-status.js',
   './minecraft-data.json',
-  './manifest.json',
-  './assets/icon.svg',
-  './assets/icon-192.png',
-  './assets/icon-512.png'
+  './manifest.json'
 ];
 
-// Installation: Alle App-Dateien für den Offline-Betrieb speichern
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE))
+    caches.open(CACHE_NAME).then(async (cache) => {
+      for (const asset of ASSETS_TO_CACHE) {
+        try {
+          await cache.add(asset);
+        } catch (err) {
+          console.warn('Asset konnte nicht vorab gecacht werden:', asset, err);
+        }
+      }
+    })
   );
-  // Neue Version sofort aktivieren, ohne auf das Schließen aller Tabs zu warten
   self.skipWaiting();
 });
 
-// Aktivierung: Alte Caches vorheriger Versionen aufräumen
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -36,16 +35,34 @@ self.addEventListener('activate', (event) => {
           .filter((key) => key !== CACHE_NAME)
           .map((oldKey) => caches.delete(oldKey))
       )
-    )
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Abruf: Erst aus dem Cache laden (blitzschnell & offline), sonst aus dem Netz
 self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
+
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      return cachedResponse || fetch(event.request);
-    })
+    fetch(event.request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.ok) {
+          const copy = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, copy);
+          });
+        }
+        return networkResponse;
+      })
+      .catch(async () => {
+        const cached = await caches.match(event.request);
+        if (cached) return cached;
+        if (event.request.mode === 'navigate') {
+          return caches.match('./index.html');
+        }
+        throw new Error('Offline und nicht im Cache');
+      })
   );
 });
