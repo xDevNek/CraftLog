@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="de" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CraftLog · Craft Planner</title>
+  <script src="./theme-init.js"></script>
+  <link rel="stylesheet" href="./style.css">
+
+  <!-- Neue eigene Icons (Browser-Tab & App-Icons) -->
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="./assets/icon-192.png">
+  <link rel="apple-touch-icon" href="./assets/icon-192.png">
+
+  <!-- PWA-Konfiguration -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#18181b">
+</head>
+
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">
+<img src="./assets/icon.svg" alt="CraftLog Logo" width="32" height="32">
+
+
+        <div>
+          <p class="brand-name">CraftLog</p>
+          <p class="brand-subtitle">Minecraft · 1.21.4</p>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <div
+          class="language-switch"
+          role="group"
+          aria-label="Language / Sprache"
+        >
+          <button id="language-de" type="button">DE</button>
+          <button id="language-en" type="button">EN</button>
+        </div>
+
+        <button
+          id="theme-toggle"
+          class="theme-toggle"
+          type="button"
+          role="switch"
+          aria-checked="true"
+        >
+          <span class="theme-label"></span>
+          <span class="theme-track" aria-hidden="true"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <p class="section-label" id="lists-label"></p>
+
+      <form id="create-list-form" class="create-list">
+        <input
+          id="new-list-name"
+          type="text"
+          maxlength="60"
+          required
+        >
+        <button id="create-list-button" type="submit">+</button>
+      </form>
+
+      <nav
+        id="list-navigation"
+        class="list-navigation"
+        aria-label="Listen / Lists"
+      ></nav>
+
+    </aside>
+
+        <main id="workspace" class="workspace"></main>
+  </div>
+
+  <footer class="site-footer">
+  <div class="footer-inner">
+    <a
+  class="icon-credit"
+  href="https://icons8.com/icon/eavJBCxsnY8R/crafting-table"
+  target="_blank"
+  rel="noopener noreferrer"
+>
+  Crafting Table Icon Icons8
+</a>
+
+    <span id="footer-project"></span>
+    <span id="footer-storage"></span>
+    <div id="footer-data" class="footer-data"></div>
+  </div>
+</footer>
+<script src="./planner.js" defer></script>
+<script src="./list-summary.js" defer></script>
+<script src="./app.js" defer></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .catch((err) => console.error('Service Worker Fehler:', err));
+    });
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Dunkler Hintergrund mit Rahmen in #b66c42 -->
+  <rect width="512" height="512" rx="112" fill="#18181b" />
+  <rect x="18" y="18" width="476" height="476" rx="94" fill="none" stroke="#b66c42" stroke-width="14" />
+
+  <!-- 3x3 Crafting-Grid als "C" -->
+  <g transform="translate(106, 106)">
+    <!-- Reihe 1: Komplett grün (oberer Balken des C) -->
+    <rect x="0" y="0" width="84" height="84" rx="16" fill="#294638" stroke="#3b6350" stroke-width="4" />
+    <rect x="108" y="0" width="84" height="84" rx="16" fill="#294638" stroke="#3b6350" stroke-width="4" />
+    <rect x="216" y="0" width="84" height="84" rx="16" fill="#294638" stroke="#3b6350" stroke-width="4" />
+
+    <!-- Reihe 2: Links grün, Mitte & Rechts leer -->
+    <rect x="0" y="108" width="84" height="84" rx="16" fill="#294638" stroke="#3b6350" stroke-width="4" />
+    <rect x="108" y="108" width="84" height="84" rx="16" fill="#27272a" />
+    <rect x="216" y="108" width="84" height="84" rx="16" fill="#27272a" />
+
+    <!-- Reihe 3: Komplett grün (unterer Balken des C) -->
+    <rect x="0" y="216" width="84" height="84" rx="16" fill="#294638" stroke="#3b6350" stroke-width="4" />
+    <rect x="108" y="216" width="84" height="84" rx="16" fill="#294638" stroke="#3b6350" stroke-width="4" />
+    <rect x="216" y="216" width="84" height="84" rx="16" fill="#294638" stroke="#3b6350" stroke-width="4" />
+  </g>
+</svg>
