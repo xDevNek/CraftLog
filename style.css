@@ -3038,3 +3038,29 @@ dialog.tc-source-dialog::backdrop {
 .items-toolbar[hidden] {
   display: none !important;
 }
+@media (max-width: 768px) {
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: clip;
+    overflow-y: auto;
+    scroll-padding-top: calc(env(safe-area-inset-top) + 1rem);
+  }
+
+  .app,
+  .layout,
+  main,
+  #workspace {
+    min-height: auto;
+    height: auto;
+    overflow: visible;
+  }
+
+  header,
+  .topbar,
+  .app-header {
+    position: relative;
+    top: auto;
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+  }
+}

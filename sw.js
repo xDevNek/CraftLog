@@ -1,4 +1,4 @@
-const CACHE_NAME = 'CraftLog-cache-v0.0.33';
+const CACHE_NAME = 'CraftLog-cache-v0.0.34';
 
 const ASSETS_TO_CACHE = [
   './',
