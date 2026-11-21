@@ -12,7 +12,7 @@ const SORT_MODES = [
   "name-desc"
 ];
 
-const ICON_EXACT_ALIASES = {
+const BLOCK_VARIANT_ALIASES = {
   carrots: "carrot",
   potatoes: "potato",
   beetroots: "beetroot",
@@ -28,6 +28,7 @@ const ICON_EXACT_ALIASES = {
   soul_wall_torch: "soul_torch",
   redstone_wall_torch: "redstone_torch",
   redstone_wire: "redstone",
+  redstone_dust: "redstone",
   tripwire: "string",
   water: "water_bucket",
   lava: "lava_bucket",
@@ -41,41 +42,7 @@ const ICON_EXACT_ALIASES = {
   cave_vines: "glow_berries",
   cave_vines_plant: "glow_berries",
   weeping_vines_plant: "weeping_vines",
-  twisting_vines_plant: "twisting_vines",
-  potted_azalea_bush: "azalea",
-  potted_flowering_azalea_bush: "flowering_azalea"
-};
-
-const LITEMATICA_ALIASES = {
-  "redstone wire": "minecraft:redstone",
-  "redstone dust": "minecraft:redstone",
-  "wall torch": "minecraft:torch",
-  "soul wall torch": "minecraft:soul_torch",
-  "redstone wall torch": "minecraft:redstone_torch",
-  "water": "minecraft:water_bucket",
-  "lava": "minecraft:lava_bucket",
-  "sweet berry bush": "minecraft:sweet_berries",
-  "cocoa": "minecraft:cocoa_beans",
-  "carrots": "minecraft:carrot",
-  "potatoes": "minecraft:potato",
-  "beetroots": "minecraft:beetroot_seeds",
-  "wheat": "minecraft:wheat_seeds",
-  "melon stem": "minecraft:melon_seeds",
-  "attached melon stem": "minecraft:melon_seeds",
-  "pumpkin stem": "minecraft:pumpkin_seeds",
-  "attached pumpkin stem": "minecraft:pumpkin_seeds",
-  "tripwire": "minecraft:string",
-  "tall seagrass": "minecraft:seagrass",
-  "kelp plant": "minecraft:kelp",
-  "twisting vines plant": "minecraft:twisting_vines",
-  "weeping vines plant": "minecraft:weeping_vines",
-  "cave vines plant": "minecraft:glow_berries",
-  "cave vines": "minecraft:glow_berries",
-  "big dripleaf stem": "minecraft:big_dripleaf",
-  "bamboo sapling": "minecraft:bamboo",
-  "water cauldron": "minecraft:cauldron",
-  "lava cauldron": "minecraft:cauldron",
-  "powder snow cauldron": "minecraft:cauldron"
+  twisting_vines_plant: "twisting_vines"
 };
 
 const LITEMATICA_SKIP_BLOCKS = new Set([
@@ -93,31 +60,11 @@ const LITEMATICA_SKIP_BLOCKS = new Set([
 ]);
 
 const SOURCE_CATEGORY_META = {
-  location: {
-    icon: "⛏️",
-    de: "Fundort",
-    en: "Location"
-  },
-  farm: {
-    icon: "🌾",
-    de: "Farm",
-    en: "Farm"
-  },
-  trade: {
-    icon: "🤝",
-    de: "Handel",
-    en: "Trading"
-  },
-  loot: {
-    icon: "💎",
-    de: "Loot",
-    en: "Loot"
-  },
-  craft: {
-    icon: "🔨",
-    de: "Herstellung",
-    en: "Crafting"
-  }
+  location: { icon: "⛏️", de: "Fundort", en: "Location" },
+  farm: { icon: "🌾", de: "Farm", en: "Farm" },
+  trade: { icon: "🤝", de: "Handel", en: "Trading" },
+  loot: { icon: "💎", de: "Loot", en: "Loot" },
+  craft: { icon: "🔨", de: "Herstellung", en: "Crafting" }
 };
 
 const translations = {
@@ -128,16 +75,14 @@ const translations = {
     overview: "Projektübersicht",
     noListsTitle: "Noch keine Liste.",
     noListsText:
-      "Erstelle links deine erste Liste oder importiere direkt eine .litematic-Datei bzw. Materialliste (.txt / .csv).",
+      "Erstelle links deine erste Liste, füge eine kopierte Liste per Strg+V ein oder importiere eine .litematic-Datei.",
     listDescription:
       "Plane benötigte Blöcke und Gegenstände für dein Projekt.",
     duplicate: "Duplizieren",
     duplicateTitle:
       "Liste inklusive Notizen und Rezeptwahl als neue Vorlage kopieren",
-    duplicateListName: name =>
-      `${name} (Kopie)`,
-    listDuplicatedNotice: name =>
-      `Liste „${name}“ als Vorlage dupliziert`,
+    duplicateListName: name => `${name} (Kopie)`,
+    listDuplicatedNotice: name => `Liste „${name}“ als Vorlage dupliziert`,
     notesTitle: "Projekt-Notizen & Koordinaten",
     notesPlaceholder:
       "z. B. Baustelle: X 120 / Y 68 / Z -450 · Nether-Tunnel: Blau · Dach: Tiefenschieferziegel …",
@@ -145,15 +90,12 @@ const translations = {
     notesClear: "Notizen leeren",
     rename: "Umbenennen",
     delete: "Löschen",
-    deleteQuestion: name =>
-      `Liste „${name}“ wirklich löschen?`,
+    deleteQuestion: name => `Liste „${name}“ wirklich löschen?`,
     renameQuestion: "Neuer Listenname:",
     progress: "Fortschritt",
-    completed: (done, total) =>
-      `${done} von ${total} erledigt`,
+    completed: (done, total) => `${done} von ${total} erledigt`,
     listCompleteTitle: "Liste abgeschlossen!",
-    listCompleteSubtitle: name =>
-      `${name} · 100 % erledigt`,
+    listCompleteSubtitle: name => `${name} · 100 % erledigt`,
     listCompleteText:
       "Du hast alle Einträge in dieser Liste erledigt. Möchtest du die Liste jetzt löschen oder alle Haken zurücksetzen?",
     resetList: "Liste zurücksetzen",
@@ -162,14 +104,19 @@ const translations = {
     close: "Schließen",
     undoAction: "Rückgängig",
     undoDismiss: "Hinweis schließen",
-    itemRemovedNotice: label =>
-      `„${label}“ entfernt`,
-    listRemovedNotice: name =>
-      `Liste „${name}“ gelöscht`,
+    itemRemovedNotice: label => `„${label}“ entfernt`,
+    listRemovedNotice: name => `Liste „${name}“ gelöscht`,
     backupHeading: "Import & Backup",
     litematicaImport: "Litematica (.litematic / .txt)",
     litematicaImportTitle:
       "Litematica-Bauwerk (.litematic) oder Materialliste (.txt / .csv) direkt als Projekt einlesen",
+    clipboardImport: "Aus Zwischenablage (Strg+V)",
+    clipboardImportTitle:
+      "Kopierte Litematica-Tabelle oder Materialliste direkt aus der Zwischenablage einfügen",
+    clipboardEmptyError:
+      "Die Zwischenablage ist leer oder enthält keine erkennbare Materialliste.",
+    clipboardPermissionError:
+      "Zugriff auf die Zwischenablage blockiert. Drücke einfach Strg+V (oder Cmd+V) direkt auf der Seite.",
     litematicaDialogTitle: "Litematica-Import",
     litematicaDialogSubtitle: (itemCount, blockCount) =>
       `${itemCount} ${itemCount === 1 ? "Material" : "Materialien"} · ${blockCount.toLocaleString("de-DE")} Blöcke gesamt`,
@@ -185,11 +132,10 @@ const translations = {
     litematicaAddToCurrent: "Zur aktuellen Liste",
     litematicaCreateNew: "Neue Liste erstellen",
     litematicaInvalidError:
-      "Die Datei konnte nicht als Litematica-Datei (.litematic) oder Materialliste (.txt / .csv) erkannt werden.",
+      "Der Inhalt konnte nicht als Litematica-Datei (.litematic) oder Materialliste (.txt / .csv) erkannt werden.",
     litematicaEmptyError:
-      "In dieser Litematica-Datei wurden keine gültigen Materialien gefunden.",
-    litematicaReadError:
-      "Die Litematica-Datei konnte nicht gelesen werden.",
+      "In dieser Materialliste wurden keine gültigen Materialien gefunden.",
+    litematicaReadError: "Die Datei konnte nicht gelesen werden.",
     litematicaCreatedNotice: (name, count) =>
       `Liste „${name}“ mit ${count} ${count === 1 ? "Material" : "Materialien"} erstellt`,
     litematicaMergedNotice: (name, count) =>
@@ -198,8 +144,7 @@ const translations = {
     backupExportTitle:
       "Alle Listen als lokale JSON-Datei herunterladen (ohne Cookies)",
     backupImport: "Backup laden",
-    backupImportTitle:
-      "Gesicherte JSON-Datei vom Gerät wiederherstellen",
+    backupImportTitle: "Gesicherte JSON-Datei vom Gerät wiederherstellen",
     backupDialogTitle: "Backup wiederherstellen",
     backupDialogSubtitle: count =>
       `${count} ${count === 1 ? "Liste" : "Listen"} in der Datei gefunden`,
@@ -211,17 +156,14 @@ const translations = {
       "Die ausgewählte Datei ist kein gültiges CraftLog-Backup.",
     backupEmptyError:
       "In dieser Backup-Datei sind keine Listen enthalten.",
-    backupReadError:
-      "Die Datei konnte nicht gelesen werden.",
+    backupReadError: "Die Datei konnte nicht gelesen werden.",
     backupSuccessNotice: count =>
       `${count} ${count === 1 ? "Liste" : "Listen"} aus Backup geladen`,
     hideCompleted: "Erledigte ausblenden",
-    hideCompletedCount: count =>
-      `Erledigte ausblenden (${count})`,
+    hideCompletedCount: count => `Erledigte ausblenden (${count})`,
     showCompletedAction: "Erledigte wieder einblenden",
     allHiddenTitle: "Alle Einträge sind erledigt.",
-    allHiddenText:
-      "Erledigte Einträge sind aktuell ausgeblendet.",
+    allHiddenText: "Erledigte Einträge sind aktuell ausgeblendet.",
     sortLabel: "Sortierung",
     sortManual: "Sortierung: Zuletzt zuerst",
     sortQuantityDesc: "Menge: Höchste zuerst",
@@ -241,48 +183,29 @@ const translations = {
     collapseMaterials: "Materialien einklappen",
     expandMaterials: "Materialien ausklappen",
     noItemsTitle: "Die Liste ist noch leer.",
-    noItemsText:
-      "Füge oben einen Block oder Gegenstand hinzu.",
+    noItemsText: "Füge oben einen Block oder Gegenstand hinzu.",
     block: "Block",
     item: "Gegenstand",
     noResults: "Keine Treffer.",
-    narrow: count =>
-      `${count} Treffer. Tippe weiter, um einzugrenzen.`,
-    choose:
-      "Bitte einen Eintrag aus den Suchvorschlägen auswählen.",
-    invalidQuantity:
-      "Bitte eine ganze Anzahl größer als 0 eingeben.",
+    narrow: count => `${count} Treffer. Tippe weiter, um einzugrenzen.`,
+    choose: "Bitte einen Eintrag aus den Suchvorschlägen auswählen.",
+    invalidQuantity: "Bitte eine ganze Anzahl größer als 0 eingeben.",
     remove: "Eintrag entfernen",
     editQuantity: "Anzahl ändern",
     save: "Speichern",
     cancel: "Abbrechen",
-    crafting_shaped: "Werkbank",
-    crafting_shapeless: "Werkbank",
-    smelting: "Ofen",
-    blasting: "Hochofen",
-    smoking: "Räucherofen",
-    campfire_cooking: "Lagerfeuer",
-    stonecutting: "Steinsäge",
-    smithing_transform: "Schmiedetisch",
     source: "Quellen",
     plannedQuantity: "Geplante Menge",
-    showSourcesFor: name =>
-      `Beschaffungswege für ${name} anzeigen`,
-    sourceCraftableText: stations =>
-      `Herstellung über ${stations} möglich. Den kompletten Herstellungsbaum findest du unten unter „Gesamtbedarf & Crafting-Checkliste“.`,
-    sourceOpenText:
-      "Ein geprüfter Beschaffungsweg ist noch nicht hinterlegt.",
+    showSourcesFor: name => `Beschaffungswege für ${name} anzeigen`,
     totalUnavailable:
       "Der Gesamtbedarf konnte nicht geladen werden. Prüfe, ob list-summary.js vor app.js eingebunden ist.",
     loading: "Minecraft-Daten werden geladen …",
     loaded: count =>
       `${count} Blöcke und Gegenstände geladen · Minecraft Java 1.21.4`,
-    incompleteNames: count =>
-      `${count} Einträge ohne deutschen Namen.`,
+    incompleteNames: count => `${count} Einträge ohne deutschen Namen.`,
     loadError:
       "minecraft-data.json konnte nicht geladen werden. Prüfe, ob die Datei im Projektordner liegt und der Webserver läuft.",
-    footerStorage:
-      "Listen werden lokal in diesem Browser gespeichert."
+    footerStorage: "Listen werden lokal in diesem Browser gespeichert."
   },
 
   en: {
@@ -292,16 +215,14 @@ const translations = {
     overview: "Project overview",
     noListsTitle: "No lists yet.",
     noListsText:
-      "Create your first list on the left or directly import a .litematic schematic or material list (.txt / .csv).",
+      "Create your first list on the left, paste a copied list with Ctrl+V, or import a .litematic schematic.",
     listDescription:
       "Plan the blocks and items needed for your project.",
     duplicate: "Duplicate",
     duplicateTitle:
       "Copy list including notes and recipe choices as a fresh template",
-    duplicateListName: name =>
-      `${name} (Copy)`,
-    listDuplicatedNotice: name =>
-      `Duplicated “${name}” as a template`,
+    duplicateListName: name => `${name} (Copy)`,
+    listDuplicatedNotice: name => `Duplicated “${name}” as a template`,
     notesTitle: "Project notes & coordinates",
     notesPlaceholder:
       "e.g. Build site: X 120 / Y 68 / Z -450 · Nether tunnel: Blue · Roof: Deepslate bricks …",
@@ -309,15 +230,12 @@ const translations = {
     notesClear: "Clear notes",
     rename: "Rename",
     delete: "Delete",
-    deleteQuestion: name =>
-      `Delete the list “${name}”?`,
+    deleteQuestion: name => `Delete the list “${name}”?`,
     renameQuestion: "New list name:",
     progress: "Progress",
-    completed: (done, total) =>
-      `${done} of ${total} completed`,
+    completed: (done, total) => `${done} of ${total} completed`,
     listCompleteTitle: "List completed!",
-    listCompleteSubtitle: name =>
-      `${name} · 100% completed`,
+    listCompleteSubtitle: name => `${name} · 100% completed`,
     listCompleteText:
       "You have completed all items in this list. Would you like to delete the list or reset all checkmarks?",
     resetList: "Reset list",
@@ -326,14 +244,19 @@ const translations = {
     close: "Close",
     undoAction: "Undo",
     undoDismiss: "Dismiss notice",
-    itemRemovedNotice: label =>
-      `Removed “${label}”`,
-    listRemovedNotice: name =>
-      `Deleted list “${name}”`,
+    itemRemovedNotice: label => `Removed “${label}”`,
+    listRemovedNotice: name => `Deleted list “${name}”`,
     backupHeading: "Import & backup",
     litematicaImport: "Litematica (.litematic / .txt)",
     litematicaImportTitle:
       "Import a Litematica schematic (.litematic) or material list (.txt / .csv) directly as a project",
+    clipboardImport: "From clipboard (Ctrl+V)",
+    clipboardImportTitle:
+      "Paste a copied Litematica table or material list directly from your clipboard",
+    clipboardEmptyError:
+      "Your clipboard is empty or does not contain a recognizable material list.",
+    clipboardPermissionError:
+      "Clipboard access was blocked. Simply press Ctrl+V (or Cmd+V) directly on the page.",
     litematicaDialogTitle: "Litematica import",
     litematicaDialogSubtitle: (itemCount, blockCount) =>
       `${itemCount} ${itemCount === 1 ? "material" : "materials"} · ${blockCount.toLocaleString("en-US")} blocks total`,
@@ -344,16 +267,14 @@ const translations = {
     litematicaModeMissing: "Missing only (Missing)",
     litematicaUnmatchedTitle: count =>
       `${count} ${count === 1 ? "entry" : "entries"} not found in catalog (will be skipped):`,
-    litematicaNoItemsInMode:
-      "No remaining quantities in this selection.",
+    litematicaNoItemsInMode: "No remaining quantities in this selection.",
     litematicaAddToCurrent: "Add to current list",
     litematicaCreateNew: "Create new list",
     litematicaInvalidError:
-      "Could not recognize this file as a Litematica schematic (.litematic) or material list (.txt / .csv).",
+      "Could not recognize this content as a Litematica schematic (.litematic) or material list (.txt / .csv).",
     litematicaEmptyError:
-      "No valid materials were found in this Litematica file.",
-    litematicaReadError:
-      "Could not read the Litematica file.",
+      "No valid materials were found in this material list.",
+    litematicaReadError: "Could not read the file.",
     litematicaCreatedNotice: (name, count) =>
       `Created list “${name}” with ${count} ${count === 1 ? "material" : "materials"}`,
     litematicaMergedNotice: (name, count) =>
@@ -373,19 +294,15 @@ const translations = {
     backupReplaceAction: "Replace existing",
     backupInvalidError:
       "The selected file is not a valid CraftLog backup.",
-    backupEmptyError:
-      "This backup file does not contain any lists.",
-    backupReadError:
-      "Could not read the selected file.",
+    backupEmptyError: "This backup file does not contain any lists.",
+    backupReadError: "Could not read the selected file.",
     backupSuccessNotice: count =>
       `Loaded ${count} ${count === 1 ? "list" : "lists"} from backup`,
     hideCompleted: "Hide completed",
-    hideCompletedCount: count =>
-      `Hide completed (${count})`,
+    hideCompletedCount: count => `Hide completed (${count})`,
     showCompletedAction: "Show completed entries",
     allHiddenTitle: "All entries are completed.",
-    allHiddenText:
-      "Completed entries are currently hidden.",
+    allHiddenText: "Completed entries are currently hidden.",
     sortLabel: "Sort order",
     sortManual: "Sort: Newest first",
     sortQuantityDesc: "Quantity: High to low",
@@ -409,66 +326,41 @@ const translations = {
     block: "Block",
     item: "Item",
     noResults: "No results.",
-    narrow: count =>
-      `${count} results. Keep typing to narrow them down.`,
-    choose:
-      "Please select an entry from the suggestions.",
-    invalidQuantity:
-      "Please enter a whole number greater than 0.",
+    narrow: count => `${count} results. Keep typing to narrow them down.`,
+    choose: "Please select an entry from the suggestions.",
+    invalidQuantity: "Please enter a whole number greater than 0.",
     remove: "Remove entry",
     editQuantity: "Edit quantity",
     save: "Save",
     cancel: "Cancel",
-    crafting_shaped: "Crafting Table",
-    crafting_shapeless: "Crafting Table",
-    smelting: "Furnace",
-    blasting: "Blast Furnace",
-    smoking: "Smoker",
-    campfire_cooking: "Campfire",
-    stonecutting: "Stonecutter",
-    smithing_transform: "Smithing Table",
     source: "Sources",
     plannedQuantity: "Planned quantity",
-    showSourcesFor: name =>
-      `Show acquisition methods for ${name}`,
-    sourceCraftableText: stations =>
-      `Can be made using ${stations}. Open “Total materials & crafting checklist” below for the full crafting tree.`,
-    sourceOpenText:
-      "A verified acquisition method has not been added yet.",
+    showSourcesFor: name => `Show acquisition methods for ${name}`,
     totalUnavailable:
       "Could not load total materials. Check that list-summary.js is included before app.js.",
     loading: "Loading Minecraft data …",
     loaded: count =>
       `${count} blocks and items loaded · Minecraft Java 1.21.4`,
-    incompleteNames: count =>
-      `${count} entries without a German name.`,
+    incompleteNames: count => `${count} entries without a German name.`,
     loadError:
       "Could not load minecraft-data.json. Check that it is in the project folder and the web server is running.",
-    footerStorage:
-      "Lists are stored locally in this browser."
+    footerStorage: "Lists are stored locally in this browser."
   }
 };
 
 let language = "de";
-
 try {
-  language =
-    localStorage.getItem(LANGUAGE_KEY) === "en"
-      ? "en"
-      : "de";
+  language = localStorage.getItem(LANGUAGE_KEY) === "en" ? "en" : "de";
 } catch {
   language = "de";
 }
 
-let appVersion = "0.0.32";
-
+let appVersion = "0.0.35";
 try {
   const cachedVersion = localStorage.getItem(VERSION_KEY);
-  if (cachedVersion) {
-    appVersion = cachedVersion;
-  }
+  if (cachedVersion) appVersion = cachedVersion;
 } catch {
-  // Standardversion verwenden.
+  // Standardversion behalten
 }
 
 let minecraft = null;
@@ -478,14 +370,12 @@ let catalogByLookup = new Map();
 let loadError = false;
 let highlightedItemId = null;
 
-// Flüchtiger Arbeitsspeicher für Rückgängig-Aktionen (keine Cookies)
 let activeToast = null;
 let toastTimerId = null;
 let toastEffectTimerId = null;
 let mcToastStyleInjected = false;
 
 const failedIconIds = new Set();
-
 const themeToggle = document.querySelector("#theme-toggle");
 
 function t() {
@@ -496,50 +386,107 @@ function newId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+function normalizeId(id) {
+  if (typeof id !== "string") return "";
+  return id.startsWith("minecraft:") ? id : `minecraft:${id}`;
+}
+
+function resolveCanonicalItemId(rawId) {
+  const normalized = normalizeId(rawId);
+  const short = normalized.replace(/^minecraft:/, "");
+  if (!short) return normalized;
+
+  if (BLOCK_VARIANT_ALIASES[short]) {
+    return `minecraft:${BLOCK_VARIANT_ALIASES[short]}`;
+  }
+  if (short.startsWith("potted_")) {
+    return `minecraft:${short.slice(7)}`;
+  }
+  if (short === "candle_cake" || short.endsWith("_candle_cake")) {
+    return "minecraft:cake";
+  }
+  if (short.endsWith("_cauldron")) {
+    return "minecraft:cauldron";
+  }
+
+  const wallMatch = short.match(
+    /^(.+)_wall_(sign|hanging_sign|banner|head|skull|fan)$/
+  );
+  if (wallMatch) {
+    return `minecraft:${wallMatch[1]}_${wallMatch[2]}`;
+  }
+
+  return normalized;
+}
+
+function isTechnicalBlockState(id) {
+  const short = String(id || "").replace(/^minecraft:/, "");
+  if (!short) return false;
+  if (BLOCK_VARIANT_ALIASES[short]) return true;
+  if (
+    /^(air|cave_air|void_air|moving_piston|fire|soul_fire|nether_portal|end_portal|end_gateway|bubble_column)$/.test(
+      short
+    )
+  ) {
+    return true;
+  }
+  return resolveCanonicalItemId(`minecraft:${short}`) !== `minecraft:${short}`;
+}
+
+function openModalDialog(dialog, closeBtn) {
+  const closeDialog = () => {
+    if (dialog.open) dialog.close();
+    dialog.remove();
+  };
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", closeDialog);
+  }
+  dialog.addEventListener("click", event => {
+    if (event.target === dialog) closeDialog();
+  });
+  dialog.addEventListener("close", () => dialog.remove());
+
+  document.body.append(dialog);
+  if (typeof dialog.showModal === "function") {
+    dialog.showModal();
+  } else {
+    dialog.setAttribute("open", "");
+  }
+
+  return closeDialog;
+}
+
 function loadState() {
   try {
-    const saved = JSON.parse(
-      localStorage.getItem(LISTS_KEY)
-    );
-
+    const saved = JSON.parse(localStorage.getItem(LISTS_KEY));
     if (saved && Array.isArray(saved.lists)) {
       return {
         lists: saved.lists,
         hideCompleted: Boolean(saved.hideCompleted),
-        sortBy: SORT_MODES.includes(saved.sortBy)
-          ? saved.sortBy
-          : "manual"
+        sortBy: SORT_MODES.includes(saved.sortBy) ? saved.sortBy : "manual"
       };
     }
   } catch {
-    // Keine gültigen Daten unter dem aktuellen Schlüssel.
+    // Weiter zu altem Schlüssel
   }
 
   try {
-    const previous = JSON.parse(
-      localStorage.getItem(OLD_LISTS_KEY)
-    );
-
+    const previous = JSON.parse(localStorage.getItem(OLD_LISTS_KEY));
     if (previous && Array.isArray(previous.folders)) {
       return {
         lists: previous.folders.flatMap(folder =>
-          Array.isArray(folder.lists)
-            ? folder.lists
-            : []
+          Array.isArray(folder.lists) ? folder.lists : []
         ),
         hideCompleted: false,
         sortBy: "manual"
       };
     }
   } catch {
-    // Keine alten Listen vorhanden.
+    // Keine Alt-Daten vorhanden
   }
 
-  return {
-    lists: [],
-    hideCompleted: false,
-    sortBy: "manual"
-  };
+  return { lists: [], hideCompleted: false, sortBy: "manual" };
 }
 
 const state = loadState();
@@ -547,15 +494,9 @@ let activeListId = state.lists[0]?.id || null;
 
 function save() {
   try {
-    localStorage.setItem(
-      LISTS_KEY,
-      JSON.stringify(state)
-    );
+    localStorage.setItem(LISTS_KEY, JSON.stringify(state));
   } catch (error) {
-    console.error(
-      "Listen konnten nicht gespeichert werden:",
-      error
-    );
+    console.error("Listen konnten nicht gespeichert werden:", error);
   }
 }
 
@@ -935,20 +876,12 @@ function spawnMinecraftToastParticles(toastEl, variant) {
 }
 
 function clearToast() {
-  if (toastTimerId) {
-    clearTimeout(toastTimerId);
-    toastTimerId = null;
-  }
-  if (toastEffectTimerId) {
-    clearTimeout(toastEffectTimerId);
-    toastEffectTimerId = null;
-  }
+  clearTimeout(toastTimerId);
+  clearTimeout(toastEffectTimerId);
+  toastTimerId = null;
+  toastEffectTimerId = null;
   activeToast = null;
-
-  const existing = document.getElementById("craftlog-toast");
-  if (existing) {
-    existing.remove();
-  }
+  document.getElementById("craftlog-toast")?.remove();
 }
 
 function renderToast(animate = true) {
@@ -956,7 +889,7 @@ function renderToast(animate = true) {
 
   const existing = document.getElementById("craftlog-toast");
   if (!activeToast) {
-    if (existing) existing.remove();
+    existing?.remove();
     return;
   }
 
@@ -966,9 +899,7 @@ function renderToast(animate = true) {
     return;
   }
 
-  if (existing) {
-    existing.remove();
-  }
+  existing?.remove();
 
   const variant = activeToast.variant || "info";
   const kickerText =
@@ -1018,9 +949,7 @@ function renderToast(animate = true) {
     undoBtn.addEventListener("click", () => {
       const handler = activeToast?.onUndo;
       clearToast();
-      if (handler) {
-        handler();
-      }
+      handler?.();
     });
     actions.append(undoBtn);
   }
@@ -1056,27 +985,15 @@ function renderToast(animate = true) {
 
 function showToast({ getMessage, onUndo = null, duration = 5000, variant = "info" }) {
   clearToast();
-
-  activeToast = {
-    getMessage,
-    onUndo,
-    duration,
-    variant
-  };
-
+  activeToast = { getMessage, onUndo, duration, variant };
   renderToast(true);
-
-  toastTimerId = setTimeout(() => {
-    clearToast();
-  }, duration);
+  toastTimerId = setTimeout(clearToast, duration);
 }
 
 function deleteListWithUndo(list) {
   if (!list) return;
 
-  const listIndex = state.lists.findIndex(
-    entry => entry.id === list.id
-  );
+  const listIndex = state.lists.findIndex(entry => entry.id === list.id);
   if (listIndex === -1) return;
 
   const listSnapshot = JSON.parse(JSON.stringify(list));
@@ -1112,59 +1029,27 @@ function deleteListWithUndo(list) {
 function duplicateListAsTemplate(list) {
   if (!list) return;
 
-  const listIndex = state.lists.findIndex(
-    entry => entry.id === list.id
-  );
-
-  const duplicatedItems = Array.isArray(list.items)
-    ? list.items.map(entry => ({
-        id: newId(),
-        blockId: entry.blockId,
-        quantity: entry.quantity,
-        done: false
-      }))
-    : [];
-
+  const listIndex = state.lists.findIndex(entry => entry.id === list.id);
   const copyName = t().duplicateListName(list.name);
 
   const clonedList = {
+    ...JSON.parse(JSON.stringify(list)),
     id: newId(),
     name: copyName,
-    notes: typeof list.notes === "string" ? list.notes : "",
     notesOpen: Boolean(list.notes && list.notes.trim()),
     itemsOpen: typeof list.itemsOpen === "boolean" ? list.itemsOpen : true,
-    items: duplicatedItems,
-    summaryInventory: {}
+    summaryInventory: {},
+    items: Array.isArray(list.items)
+      ? list.items.map(entry => ({
+          id: newId(),
+          blockId: entry.blockId,
+          quantity: entry.quantity,
+          done: false
+        }))
+      : []
   };
 
-  if (
-    list.summaryChoices &&
-    typeof list.summaryChoices === "object"
-  ) {
-    clonedList.summaryChoices = { ...list.summaryChoices };
-  }
-
-  if (typeof list.summaryFuel === "string") {
-    clonedList.summaryFuel = list.summaryFuel;
-  }
-
-  if (typeof list.summaryUnitMode === "string") {
-    clonedList.summaryUnitMode = list.summaryUnitMode;
-  }
-
-  if (typeof list.summaryOpen === "boolean") {
-    clonedList.summaryOpen = list.summaryOpen;
-  }
-
-  if (
-    list.summarySections &&
-    typeof list.summarySections === "object"
-  ) {
-    clonedList.summarySections = { ...list.summarySections };
-  }
-
-  const insertAt =
-    listIndex >= 0 ? listIndex + 1 : state.lists.length;
+  const insertAt = listIndex >= 0 ? listIndex + 1 : state.lists.length;
   state.lists.splice(insertAt, 0, clonedList);
   activeListId = clonedList.id;
 
@@ -1193,13 +1078,11 @@ function buildCatalogLookup(entries) {
 
   for (const entry of entries) {
     const idSlug = entry.id.replace(/^minecraft:/, "");
-    const keys = [
+    for (const key of [
       normalizeLookupKey(entry.en),
       normalizeLookupKey(entry.de),
       normalizeLookupKey(idSlug)
-    ];
-
-    for (const key of keys) {
+    ]) {
       if (key && !map.has(key)) {
         map.set(key, entry);
       }
@@ -1214,20 +1097,9 @@ function resolveLitematicaEntry(rawName) {
   if (!cleaned) return null;
 
   if (/^[a-z0-9_:-]+$/i.test(cleaned)) {
-    const directId = normalizeId(cleaned);
-    const byId = catalogById.get(directId);
-    if (byId) return byId;
-
-    const blockToItemId = directId
-      .replace(/_wall_sign$/, "_sign")
-      .replace(/_wall_hanging_sign$/, "_hanging_sign")
-      .replace(/_wall_banner$/, "_banner")
-      .replace(/_wall_head$/, "_head")
-      .replace(/_wall_skull$/, "_skull")
-      .replace(/_wall_fan$/, "_fan");
-
-    if (blockToItemId !== directId && catalogById.has(blockToItemId)) {
-      return catalogById.get(blockToItemId);
+    const canonicalId = resolveCanonicalItemId(cleaned);
+    if (catalogById.has(canonicalId)) {
+      return catalogById.get(canonicalId);
     }
   }
 
@@ -1238,26 +1110,16 @@ function resolveLitematicaEntry(rawName) {
     return catalogByLookup.get(normalized);
   }
 
-  const aliasId = LITEMATICA_ALIASES[normalized];
-  if (aliasId && catalogById.has(aliasId)) {
-    return catalogById.get(aliasId);
+  const slug = normalized.replace(/\s+/g, "_");
+  const canonicalFromSlug = resolveCanonicalItemId(slug);
+  if (catalogById.has(canonicalFromSlug)) {
+    return catalogById.get(canonicalFromSlug);
   }
 
   if (normalized.includes(" wall ")) {
     const withoutWall = normalized.replace(/\s+wall\s+/g, " ").trim();
     if (catalogByLookup.has(withoutWall)) {
       return catalogByLookup.get(withoutWall);
-    }
-    const wallAlias = LITEMATICA_ALIASES[withoutWall];
-    if (wallAlias && catalogById.has(wallAlias)) {
-      return catalogById.get(wallAlias);
-    }
-  }
-
-  if (normalized.startsWith("potted ")) {
-    const unpotted = normalized.replace(/^potted\s+/, "").trim();
-    if (catalogByLookup.has(unpotted)) {
-      return catalogByLookup.get(unpotted);
     }
   }
 
@@ -1321,19 +1183,14 @@ async function gunzipBufferIfNeeded(arrayBuffer) {
       .stream()
       .pipeThrough(new DecompressionStream("gzip"));
 
-    const uncompressedBuffer = await new Response(decompressedStream).arrayBuffer();
-    return new Uint8Array(uncompressedBuffer);
+    return new Uint8Array(await new Response(decompressedStream).arrayBuffer());
   }
 
   return bytes;
 }
 
 function parseNbtRoot(bytes) {
-  const view = new DataView(
-    bytes.buffer,
-    bytes.byteOffset,
-    bytes.byteLength
-  );
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const utf8Decoder = new TextDecoder("utf-8");
   let offset = 0;
 
@@ -1401,9 +1258,8 @@ function parseNbtRoot(bytes) {
         offset += len;
         return arr;
       }
-      case 8: {
+      case 8:
         return readString();
-      }
       case 9: {
         ensureBytes(5);
         const elemType = view.getInt8(offset);
@@ -1422,9 +1278,7 @@ function parseNbtRoot(bytes) {
           ensureBytes(1);
           const childType = view.getInt8(offset);
           offset += 1;
-          if (childType === 0) {
-            break;
-          }
+          if (childType === 0) break;
           const childName = readString();
           obj[childName] = readPayload(childType);
         }
@@ -1481,80 +1335,56 @@ function getBlockStateContributions(paletteEntry) {
   const blockId = normalizeId(paletteEntry.Name.trim());
   const props = paletteEntry.Properties || {};
 
-  if (LITEMATICA_SKIP_BLOCKS.has(blockId)) {
-    return [];
-  }
-
-  if (props.half === "upper") {
-    return [];
-  }
-
-  if (props.part === "head") {
+  if (LITEMATICA_SKIP_BLOCKS.has(blockId) || props.half === "upper" || props.part === "head") {
     return [];
   }
 
   if (blockId.startsWith("minecraft:potted_")) {
-    const plantId = blockId.replace("minecraft:potted_", "minecraft:");
     return [
       { rawName: "minecraft:flower_pot", count: 1 },
-      { rawName: plantId, count: 1 }
+      { rawName: blockId.replace("minecraft:potted_", "minecraft:"), count: 1 }
     ];
   }
 
   let count = 1;
-
   if (props.type === "double") {
     count = 2;
-  } else if (props.candles !== undefined) {
-    count = Math.max(1, Number.parseInt(props.candles, 10) || 1);
-  } else if (props.pickles !== undefined) {
-    count = Math.max(1, Number.parseInt(props.pickles, 10) || 1);
-  } else if (props.eggs !== undefined) {
-    count = Math.max(1, Number.parseInt(props.eggs, 10) || 1);
-  } else if (props.flower_amount !== undefined) {
-    count = Math.max(1, Number.parseInt(props.flower_amount, 10) || 1);
-  } else if (props.layers !== undefined) {
-    count = Math.max(1, Number.parseInt(props.layers, 10) || 1);
+  } else {
+    for (const propKey of ["candles", "pickles", "eggs", "flower_amount", "layers"]) {
+      if (props[propKey] !== undefined) {
+        count = Math.max(1, Number.parseInt(props[propKey], 10) || 1);
+        break;
+      }
+    }
   }
 
   return [{ rawName: blockId, count }];
 }
 
 function countRegionBlocks(region) {
-  const palette = Array.isArray(region?.BlockStatePalette)
-    ? region.BlockStatePalette
-    : null;
-  const blockStates = Array.isArray(region?.BlockStates)
-    ? region.BlockStates
-    : null;
+  const palette = Array.isArray(region?.BlockStatePalette) ? region.BlockStatePalette : null;
+  const blockStates = Array.isArray(region?.BlockStates) ? region.BlockStates : null;
   const size = region?.Size;
 
   if (!palette || palette.length === 0 || !blockStates || !size) {
     return [];
   }
 
-  const sizeX = Math.abs(Number(size.x) || 0);
-  const sizeY = Math.abs(Number(size.y) || 0);
-  const sizeZ = Math.abs(Number(size.z) || 0);
-  const volume = sizeX * sizeY * sizeZ;
+  const volume =
+    Math.abs(Number(size.x) || 0) *
+    Math.abs(Number(size.y) || 0) *
+    Math.abs(Number(size.z) || 0);
 
-  if (volume <= 0) {
-    return [];
-  }
+  if (volume <= 0) return [];
 
   const paletteSize = palette.length;
-  const bitsPerEntry = Math.max(
-    2,
-    32 - Math.clz32(Math.max(1, paletteSize - 1))
-  );
-
+  const bitsPerEntry = Math.max(2, 32 - Math.clz32(Math.max(1, paletteSize - 1)));
   const mask = (1n << BigInt(bitsPerEntry)) - 1n;
   const stateCounts = new Uint32Array(paletteSize);
 
   const expectedSpanningLongs = Math.ceil((volume * bitsPerEntry) / 64);
   const entriesPerLong = Math.floor(64 / bitsPerEntry);
   const expectedPaddedLongs = Math.ceil(volume / entriesPerLong);
-
   const usePaddedLayout =
     blockStates.length !== expectedSpanningLongs &&
     blockStates.length === expectedPaddedLongs;
@@ -1566,9 +1396,7 @@ function countRegionBlocks(region) {
       const bitOffset = BigInt((i % entriesPerLong) * bitsPerEntry);
       const word = BigInt.asUintN(64, blockStates[longIndex]);
       const paletteIndex = Number((word >> bitOffset) & mask);
-      if (paletteIndex < paletteSize) {
-        stateCounts[paletteIndex]++;
-      }
+      if (paletteIndex < paletteSize) stateCounts[paletteIndex]++;
     }
   } else {
     for (let i = 0; i < volume; i++) {
@@ -1580,20 +1408,16 @@ function countRegionBlocks(region) {
       const startBitOffset = BigInt(startBit % 64);
       const lowWord = BigInt.asUintN(64, blockStates[startArrIndex]);
 
-      let paletteIndex = 0;
-      if (startArrIndex === endArrIndex || endArrIndex >= blockStates.length) {
-        paletteIndex = Number((lowWord >> startBitOffset) & mask);
-      } else {
-        const highWord = BigInt.asUintN(64, blockStates[endArrIndex]);
-        const endBitOffset = 64n - startBitOffset;
-        paletteIndex = Number(
-          ((lowWord >> startBitOffset) | (highWord << endBitOffset)) & mask
-        );
-      }
+      const paletteIndex =
+        startArrIndex === endArrIndex || endArrIndex >= blockStates.length
+          ? Number((lowWord >> startBitOffset) & mask)
+          : Number(
+              ((lowWord >> startBitOffset) |
+                (BigInt.asUintN(64, blockStates[endArrIndex]) << (64n - startBitOffset))) &
+                mask
+            );
 
-      if (paletteIndex < paletteSize) {
-        stateCounts[paletteIndex]++;
-      }
+      if (paletteIndex < paletteSize) stateCounts[paletteIndex]++;
     }
   }
 
@@ -1615,9 +1439,7 @@ function countRegionBlocks(region) {
 }
 
 function finalizeLitematicaRows(rawRows, title) {
-  if (!Array.isArray(rawRows) || rawRows.length === 0) {
-    return null;
-  }
+  if (!Array.isArray(rawRows) || rawRows.length === 0) return null;
 
   const matchedById = new Map();
   const unmatched = [];
@@ -1626,7 +1448,6 @@ function finalizeLitematicaRows(rawRows, title) {
     if (!row || row.total <= 0) continue;
 
     const entry = resolveLitematicaEntry(row.rawName);
-
     if (!entry) {
       unmatched.push(row.rawName.replace(/^minecraft:/, ""));
       continue;
@@ -1667,81 +1488,54 @@ async function parseLitematicBinaryFile(file) {
       ? root.Metadata.Name.trim()
       : "";
 
-  const title = metaName || extractTitleFromFilename(file.name);
   const rawRows = [];
-
   for (const region of Object.values(root.Regions)) {
     rawRows.push(...countRegionBlocks(region));
   }
 
-  return finalizeLitematicaRows(rawRows, title);
+  return finalizeLitematicaRows(
+    rawRows,
+    metaName || extractTitleFromFilename(file.name)
+  );
 }
 
 function parseLitematicaContent(rawText, fileName = "") {
-  const text = String(rawText || "").replace(/^\uFEFF/, "");
-  const lines = text
+  const lines = String(rawText || "")
+    .replace(/^\uFEFF/, "")
     .split(/\r?\n/)
     .map(line => line.trim())
     .filter(Boolean);
 
-  if (lines.length === 0) {
-    return null;
-  }
+  if (lines.length === 0) return null;
 
   let detectedTitle = "";
   const rawRows = [];
-  const headerWords = new Set([
-    "item",
-    "items",
-    "block",
-    "material",
-    "gegenstand",
-    "name"
-  ]);
-
-  const isAsciiTable = lines.some(
-    line => line.startsWith("|") && line.endsWith("|")
-  );
+  const headerWords = new Set(["item", "items", "block", "material", "gegenstand", "name"]);
+  const isAsciiTable = lines.some(line => line.startsWith("|") && line.endsWith("|"));
 
   if (isAsciiTable) {
     for (const line of lines) {
-      if (/^[+=-]+$/.test(line)) {
+      if (/^[+=-]+$/.test(line) || !line.startsWith("|") || !line.endsWith("|")) {
         continue;
       }
 
-      if (!line.startsWith("|") || !line.endsWith("|")) {
-        continue;
-      }
-
-      const cells = line
-        .slice(1, -1)
-        .split("|")
-        .map(cell => cell.trim());
-
-      if (cells.length === 0 || !cells[0]) {
-        continue;
-      }
+      const cells = line.slice(1, -1).split("|").map(cell => cell.trim());
+      if (!cells[0]) continue;
 
       const titleMatch = cells[0].match(
         /^(?:Material\s+List\s+for|Materialliste\s+f(?:ü|ue)r)\s+['"„“]?(.+?)['"”“]?$/i
       );
-      if (titleMatch && titleMatch[1]) {
+      if (titleMatch?.[1]) {
         detectedTitle = titleMatch[1].trim();
         continue;
       }
 
-      if (headerWords.has(cells[0].toLowerCase())) {
-        continue;
-      }
+      if (headerWords.has(cells[0].toLowerCase())) continue;
 
       const total = parseIntegerCell(cells[1]);
-      if (total === null) {
-        continue;
-      }
+      if (total === null) continue;
 
-      const missing =
-        cells.length >= 3 ? parseIntegerCell(cells[2]) : total;
-
+      const missing = cells.length >= 3 ? parseIntegerCell(cells[2]) : total;
       rawRows.push({
         rawName: cells[0],
         total,
@@ -1750,32 +1544,23 @@ function parseLitematicaContent(rawText, fileName = "") {
     }
   } else {
     const firstLine = lines[0];
-    const commaCount = (firstLine.match(/,/g) || []).length;
-    const semiCount = (firstLine.match(/;/g) || []).length;
-    const delimiter = semiCount > commaCount ? ";" : ",";
+    const delimiter =
+      (firstLine.match(/;/g) || []).length > (firstLine.match(/,/g) || []).length
+        ? ";"
+        : ",";
 
     for (const line of lines) {
-      if (line.startsWith("#")) {
-        continue;
-      }
+      if (line.startsWith("#")) continue;
 
       const cells = parseCsvLine(line, delimiter);
-      if (cells.length < 2 || !cells[0]) {
-        continue;
-      }
-
-      if (headerWords.has(cells[0].toLowerCase())) {
+      if (cells.length < 2 || !cells[0] || headerWords.has(cells[0].toLowerCase())) {
         continue;
       }
 
       const total = parseIntegerCell(cells[1]);
-      if (total === null) {
-        continue;
-      }
+      if (total === null) continue;
 
-      const missing =
-        cells.length >= 3 ? parseIntegerCell(cells[2]) : total;
-
+      const missing = cells.length >= 3 ? parseIntegerCell(cells[2]) : total;
       rawRows.push({
         rawName: cells[0],
         total,
@@ -1791,15 +1576,9 @@ function parseLitematicaContent(rawText, fileName = "") {
 }
 
 function openLitematicaImportDialog(parsed) {
-  const existingDialog = document.getElementById("craftlog-litematica-dialog");
-  if (existingDialog) {
-    existingDialog.remove();
-  }
+  document.getElementById("craftlog-litematica-dialog")?.remove();
 
-  const hasDifferentMissing = parsed.matched.some(
-    entry => entry.missing !== entry.total
-  );
-
+  const hasDifferentMissing = parsed.matched.some(entry => entry.missing !== entry.total);
   let quantityMode = "total";
 
   function getActiveEntries() {
@@ -1807,8 +1586,7 @@ function openLitematicaImportDialog(parsed) {
       .map(entry => ({
         blockId: entry.blockId,
         isBlock: entry.isBlock,
-        quantity:
-          quantityMode === "missing" ? entry.missing : entry.total
+        quantity: quantityMode === "missing" ? entry.missing : entry.total
       }))
       .filter(entry => entry.quantity > 0);
   }
@@ -1884,24 +1662,14 @@ function openLitematicaImportDialog(parsed) {
     const modeSwitch = document.createElement("div");
     modeSwitch.className = "litematica-mode-switch";
 
-    const totalBtn = document.createElement("button");
-    totalBtn.type = "button";
-    totalBtn.className = "litematica-mode-btn is-active";
-    totalBtn.textContent = t().litematicaModeTotal;
-
-    const missingBtn = document.createElement("button");
-    missingBtn.type = "button";
-    missingBtn.className = "litematica-mode-btn";
-    missingBtn.textContent = t().litematicaModeMissing;
-
-    totalBtn.addEventListener("click", () => {
+    const totalBtn = makeButton(t().litematicaModeTotal, "litematica-mode-btn is-active", () => {
       quantityMode = "total";
       totalBtn.classList.add("is-active");
       missingBtn.classList.remove("is-active");
       refreshPreview();
     });
 
-    missingBtn.addEventListener("click", () => {
+    const missingBtn = makeButton(t().litematicaModeMissing, "litematica-mode-btn", () => {
       quantityMode = "missing";
       missingBtn.classList.add("is-active");
       totalBtn.classList.remove("is-active");
@@ -1922,9 +1690,7 @@ function openLitematicaImportDialog(parsed) {
     warning.className = "litematica-unmatched-box";
 
     const warnTitle = document.createElement("strong");
-    warnTitle.textContent = t().litematicaUnmatchedTitle(
-      parsed.unmatched.length
-    );
+    warnTitle.textContent = t().litematicaUnmatchedTitle(parsed.unmatched.length);
 
     const warnText = document.createElement("span");
     warnText.textContent = parsed.unmatched.join(", ");
@@ -1936,35 +1702,16 @@ function openLitematicaImportDialog(parsed) {
   const actions = document.createElement("div");
   actions.className = "tc-dialog-actions";
 
-  const closeDialog = () => {
-    if (dialog.open) {
-      dialog.close();
-    }
-    dialog.remove();
-  };
+  let closeDialog = () => {};
+  const cancelBtn = makeButton(t().cancel, "quiet-button", () => closeDialog());
 
-  const cancelBtn = makeButton(
-    t().cancel,
-    "quiet-button",
-    closeDialog
-  );
-
-  const currentList = state.lists.find(
-    entry => entry.id === activeListId
-  );
-
-  let addToCurrentBtn = null;
-  if (currentList) {
-    addToCurrentBtn = makeButton(
-      t().litematicaAddToCurrent,
-      "quiet-button",
-      () => {
+  const currentList = state.lists.find(entry => entry.id === activeListId);
+  const addToCurrentBtn = currentList
+    ? makeButton(t().litematicaAddToCurrent, "quiet-button", () => {
         const entries = getActiveEntries();
         if (entries.length === 0) return;
 
-        if (!Array.isArray(currentList.items)) {
-          currentList.items = [];
-        }
+        if (!Array.isArray(currentList.items)) currentList.items = [];
 
         for (const imported of entries) {
           const normalized = normalizeId(imported.blockId);
@@ -1991,56 +1738,45 @@ function openLitematicaImportDialog(parsed) {
         render();
 
         showToast({
-          getMessage: () =>
-            t().litematicaMergedNotice(currentList.name, entries.length),
+          getMessage: () => t().litematicaMergedNotice(currentList.name, entries.length),
           duration: 4500
         });
-      }
-    );
-  }
+      })
+    : null;
 
-  const createNewBtn = makeButton(
-    t().litematicaCreateNew,
-    "primary-button",
-    () => {
-      const entries = getActiveEntries();
-      if (entries.length === 0) return;
+  const createNewBtn = makeButton(t().litematicaCreateNew, "primary-button", () => {
+    const entries = getActiveEntries();
+    if (entries.length === 0) return;
 
-      const listName =
-        nameInput.value.trim() || t().litematicaDefaultListName;
-
-      const createdList = {
+    const listName = nameInput.value.trim() || t().litematicaDefaultListName;
+    const createdList = {
+      id: newId(),
+      name: listName,
+      itemsOpen: true,
+      items: entries.map(entry => ({
         id: newId(),
-        name: listName,
-        itemsOpen: true,
-        items: entries.map(entry => ({
-          id: newId(),
-          blockId: entry.blockId,
-          quantity: entry.quantity,
-          done: false
-        }))
-      };
+        blockId: entry.blockId,
+        quantity: entry.quantity,
+        done: false
+      }))
+    };
 
-      state.lists.push(createdList);
-      activeListId = createdList.id;
+    state.lists.push(createdList);
+    activeListId = createdList.id;
 
-      closeDialog();
-      save();
-      render();
+    closeDialog();
+    save();
+    render();
 
-      showToast({
-        getMessage: () =>
-          t().litematicaCreatedNotice(listName, entries.length),
-        variant: "create",
-        duration: 4500
-      });
-    }
-  );
+    showToast({
+      getMessage: () => t().litematicaCreatedNotice(listName, entries.length),
+      variant: "create",
+      duration: 4500
+    });
+  });
 
   actions.append(cancelBtn);
-  if (addToCurrentBtn) {
-    actions.append(addToCurrentBtn);
-  }
+  if (addToCurrentBtn) actions.append(addToCurrentBtn);
   actions.append(createNewBtn);
   dialogBody.append(actions);
 
@@ -2048,20 +1784,10 @@ function openLitematicaImportDialog(parsed) {
   dialog.append(inner);
 
   function refreshPreview() {
-    const entries = getActiveEntries()
-      .slice()
-      .sort((a, b) => b.quantity - a.quantity);
+    const entries = getActiveEntries().sort((a, b) => b.quantity - a.quantity);
+    const totalBlocks = entries.reduce((sum, entry) => sum + entry.quantity, 0);
 
-    const totalBlocks = entries.reduce(
-      (sum, entry) => sum + entry.quantity,
-      0
-    );
-
-    subtitle.textContent = t().litematicaDialogSubtitle(
-      entries.length,
-      totalBlocks
-    );
-
+    subtitle.textContent = t().litematicaDialogSubtitle(entries.length, totalBlocks);
     previewList.replaceChildren();
 
     if (entries.length === 0) {
@@ -2104,22 +1830,45 @@ function openLitematicaImportDialog(parsed) {
   }
 
   refreshPreview();
+  closeDialog = openModalDialog(dialog, closeBtn);
+}
 
-  closeBtn.addEventListener("click", closeDialog);
-  dialog.addEventListener("click", event => {
-    if (event.target === dialog) {
-      closeDialog();
-    }
-  });
-  dialog.addEventListener("close", () => {
-    dialog.remove();
-  });
+function importRawMaterialText(rawText, silent = false) {
+  if (!minecraft) return false;
+  const trimmed = String(rawText || "").trim();
+  if (!trimmed) {
+    if (!silent) alert(t().clipboardEmptyError);
+    return false;
+  }
 
-  document.body.append(dialog);
-  if (typeof dialog.showModal === "function") {
-    dialog.showModal();
-  } else {
-    dialog.setAttribute("open", "");
+  const parsed = parseLitematicaContent(trimmed, "");
+  if (!parsed) {
+    if (!silent) alert(t().litematicaInvalidError);
+    return false;
+  }
+
+  if (parsed.matched.length === 0) {
+    if (!silent) alert(t().litematicaEmptyError);
+    return false;
+  }
+
+  openLitematicaImportDialog(parsed);
+  return true;
+}
+
+async function triggerClipboardImport() {
+  if (!minecraft) return;
+
+  if (!navigator.clipboard || typeof navigator.clipboard.readText !== "function") {
+    alert(t().clipboardPermissionError);
+    return;
+  }
+
+  try {
+    const text = await navigator.clipboard.readText();
+    importRawMaterialText(text, false);
+  } catch {
+    alert(t().clipboardPermissionError);
   }
 }
 
@@ -2127,15 +1876,9 @@ async function handleLitematicaFileSelection(file) {
   if (!file) return;
 
   try {
-    const isBinaryLitematic = /\.litematic$/i.test(file.name);
-    let parsed = null;
-
-    if (isBinaryLitematic) {
-      parsed = await parseLitematicBinaryFile(file);
-    } else {
-      const rawText = await file.text();
-      parsed = parseLitematicaContent(rawText, file.name);
-    }
+    const parsed = /\.litematic$/i.test(file.name)
+      ? await parseLitematicBinaryFile(file)
+      : parseLitematicaContent(await file.text(), file.name);
 
     if (!parsed) {
       alert(t().litematicaInvalidError);
@@ -2181,8 +1924,7 @@ function exportBackupFile() {
     lists: state.lists
   };
 
-  const jsonText = JSON.stringify(payload, null, 2);
-  const blob = new Blob([jsonText], {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
     type: "application/json;charset=utf-8"
   });
   const url = URL.createObjectURL(blob);
@@ -2194,62 +1936,43 @@ function exportBackupFile() {
   link.click();
   link.remove();
 
-  setTimeout(() => {
-    URL.revokeObjectURL(url);
-  }, 1000);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function sanitizeImportedLists(rawLists) {
-  if (!Array.isArray(rawLists)) {
-    return null;
-  }
+  if (!Array.isArray(rawLists)) return null;
 
   const sanitized = [];
 
   for (const rawList of rawLists) {
-    if (!rawList || typeof rawList !== "object") {
-      continue;
-    }
+    if (!rawList || typeof rawList !== "object") continue;
 
     const name =
       typeof rawList.name === "string" && rawList.name.trim()
         ? rawList.name.trim()
         : null;
 
-    if (!name || !Array.isArray(rawList.items)) {
-      continue;
-    }
+    if (!name || !Array.isArray(rawList.items)) continue;
 
-    const cleanItems = [];
-    for (const rawItem of rawList.items) {
-      if (!rawItem || typeof rawItem !== "object") {
-        continue;
-      }
-
-      const blockId =
-        typeof rawItem.blockId === "string" && rawItem.blockId.trim()
-          ? rawItem.blockId.trim()
-          : null;
-      const quantity = Number(rawItem.quantity);
-
-      if (
-        !blockId ||
-        !Number.isSafeInteger(quantity) ||
-        quantity < 1
-      ) {
-        continue;
-      }
-
-      cleanItems.push({
+    const cleanItems = rawList.items
+      .filter(
+        rawItem =>
+          rawItem &&
+          typeof rawItem === "object" &&
+          typeof rawItem.blockId === "string" &&
+          rawItem.blockId.trim() &&
+          Number.isSafeInteger(Number(rawItem.quantity)) &&
+          Number(rawItem.quantity) >= 1
+      )
+      .map(rawItem => ({
         id:
           typeof rawItem.id === "string" && rawItem.id.trim()
             ? rawItem.id
             : newId(),
-        blockId,
-        quantity,
+        blockId: rawItem.blockId.trim(),
+        quantity: Number(rawItem.quantity),
         done: Boolean(rawItem.done)
-      });
-    }
+      }));
 
     const cleanList = {
       id:
@@ -2260,49 +1983,24 @@ function sanitizeImportedLists(rawLists) {
       items: cleanItems
     };
 
-    if (typeof rawList.notes === "string") {
-      cleanList.notes = rawList.notes;
+    for (const [key, expectedType] of [
+      ["notes", "string"],
+      ["notesOpen", "boolean"],
+      ["itemsOpen", "boolean"],
+      ["summaryFuel", "string"],
+      ["summaryUnitMode", "string"],
+      ["summaryOpen", "boolean"],
+      ["summaryFarmMode", "boolean"]
+    ]) {
+      if (typeof rawList[key] === expectedType) {
+        cleanList[key] = rawList[key];
+      }
     }
 
-    if (typeof rawList.notesOpen === "boolean") {
-      cleanList.notesOpen = rawList.notesOpen;
-    }
-
-    if (typeof rawList.itemsOpen === "boolean") {
-      cleanList.itemsOpen = rawList.itemsOpen;
-    }
-
-    if (
-      rawList.summaryChoices &&
-      typeof rawList.summaryChoices === "object"
-    ) {
-      cleanList.summaryChoices = { ...rawList.summaryChoices };
-    }
-
-    if (
-      rawList.summaryInventory &&
-      typeof rawList.summaryInventory === "object"
-    ) {
-      cleanList.summaryInventory = { ...rawList.summaryInventory };
-    }
-
-    if (typeof rawList.summaryFuel === "string") {
-      cleanList.summaryFuel = rawList.summaryFuel;
-    }
-
-    if (typeof rawList.summaryUnitMode === "string") {
-      cleanList.summaryUnitMode = rawList.summaryUnitMode;
-    }
-
-    if (typeof rawList.summaryOpen === "boolean") {
-      cleanList.summaryOpen = rawList.summaryOpen;
-    }
-
-    if (
-      rawList.summarySections &&
-      typeof rawList.summarySections === "object"
-    ) {
-      cleanList.summarySections = { ...rawList.summarySections };
+    for (const objKey of ["summaryChoices", "summaryInventory", "summarySections"]) {
+      if (rawList[objKey] && typeof rawList[objKey] === "object") {
+        cleanList[objKey] = { ...rawList[objKey] };
+      }
     }
 
     sanitized.push(cleanList);
@@ -2316,9 +2014,7 @@ function applyImportedLists(importedLists, mode) {
     state.lists = importedLists;
     activeListId = state.lists[0]?.id || null;
   } else {
-    const usedIds = new Set(
-      state.lists.map(entry => entry.id)
-    );
+    const usedIds = new Set(state.lists.map(entry => entry.id));
 
     for (const entry of importedLists) {
       if (usedIds.has(entry.id)) {
@@ -2328,9 +2024,7 @@ function applyImportedLists(importedLists, mode) {
       state.lists.push(entry);
     }
 
-    if (!activeListId && state.lists[0]) {
-      activeListId = state.lists[0].id;
-    } else if (importedLists[0]) {
+    if (importedLists[0]) {
       activeListId = importedLists[0].id;
     }
   }
@@ -2346,10 +2040,7 @@ function applyImportedLists(importedLists, mode) {
 }
 
 function openBackupImportDialog(importedLists) {
-  const existingDialog = document.getElementById("craftlog-backup-dialog");
-  if (existingDialog) {
-    existingDialog.remove();
-  }
+  document.getElementById("craftlog-backup-dialog")?.remove();
 
   const dialog = document.createElement("dialog");
   dialog.id = "craftlog-backup-dialog";
@@ -2403,71 +2094,31 @@ function openBackupImportDialog(importedLists) {
   const actions = document.createElement("div");
   actions.className = "tc-dialog-actions";
 
-  const closeDialog = () => {
-    if (dialog.open) {
-      dialog.close();
-    }
-    dialog.remove();
-  };
-
-  const cancelBtn = makeButton(
-    t().cancel,
-    "quiet-button",
-    closeDialog
-  );
-
-  const replaceBtn = makeButton(
-    t().backupReplaceAction,
-    "danger-button",
-    () => {
-      closeDialog();
-      applyImportedLists(importedLists, "replace");
-    }
-  );
-
-  const mergeBtn = makeButton(
-    t().backupMergeAction,
-    "primary-button",
-    () => {
-      closeDialog();
-      applyImportedLists(importedLists, "merge");
-    }
-  );
+  let closeDialog = () => {};
+  const cancelBtn = makeButton(t().cancel, "quiet-button", () => closeDialog());
+  const replaceBtn = makeButton(t().backupReplaceAction, "danger-button", () => {
+    closeDialog();
+    applyImportedLists(importedLists, "replace");
+  });
+  const mergeBtn = makeButton(t().backupMergeAction, "primary-button", () => {
+    closeDialog();
+    applyImportedLists(importedLists, "merge");
+  });
 
   actions.append(cancelBtn, replaceBtn, mergeBtn);
   dialogBody.append(message, actions);
   inner.append(dialogBody);
   dialog.append(inner);
 
-  closeBtn.addEventListener("click", closeDialog);
-  dialog.addEventListener("click", event => {
-    if (event.target === dialog) {
-      closeDialog();
-    }
-  });
-  dialog.addEventListener("close", () => {
-    dialog.remove();
-  });
-
-  document.body.append(dialog);
-  if (typeof dialog.showModal === "function") {
-    dialog.showModal();
-  } else {
-    dialog.setAttribute("open", "");
-  }
+  closeDialog = openModalDialog(dialog, closeBtn);
 }
 
 async function handleBackupFileSelection(file) {
   if (!file) return;
 
   try {
-    const rawText = await file.text();
-    const parsed = JSON.parse(rawText);
-
-    const rawLists = Array.isArray(parsed)
-      ? parsed
-      : parsed?.lists;
-
+    const parsed = JSON.parse(await file.text());
+    const rawLists = Array.isArray(parsed) ? parsed : parsed?.lists;
     const importedLists = sanitizeImportedLists(rawLists);
 
     if (!importedLists) {
@@ -2487,116 +2138,28 @@ async function handleBackupFileSelection(file) {
     }
   } catch (error) {
     console.error("Backup-Import fehlgeschlagen:", error);
-    alert(
-      error instanceof SyntaxError
-        ? t().backupInvalidError
-        : t().backupReadError
-    );
+    alert(error instanceof SyntaxError ? t().backupInvalidError : t().backupReadError);
   }
-}
-
-function normalizeId(id) {
-  if (typeof id !== "string") {
-    return "";
-  }
-
-  return id.startsWith("minecraft:")
-    ? id
-    : `minecraft:${id}`;
 }
 
 function nameOf(id) {
-  const entry = catalogById.get(
-    normalizeId(id)
-  );
-
-  if (!entry) {
-    return String(id).replace(/^minecraft:/, "");
-  }
-
-  return language === "de"
-    ? entry.de || entry.en
-    : entry.en;
+  const entry = catalogById.get(normalizeId(id));
+  if (!entry) return String(id).replace(/^minecraft:/, "");
+  return language === "de" ? entry.de || entry.en : entry.en;
 }
 
 function formatStackHint(quantity) {
   const count = Math.floor(Number(quantity) || 0);
-  if (count < 64) {
-    return "";
-  }
+  if (count < 64) return "";
 
   const stacks = Math.floor(count / 64);
   const rest = count % 64;
-  const stackWord = language === "de"
-    ? (stacks === 1 ? "Stack" : "Stacks")
-    : (stacks === 1 ? "stack" : "stacks");
+  const stackWord =
+    language === "de"
+      ? (stacks === 1 ? "Stack" : "Stacks")
+      : (stacks === 1 ? "stack" : "stacks");
 
-  return rest > 0
-    ? `${stacks} ${stackWord} + ${rest}`
-    : `${stacks} ${stackWord}`;
-}
-
-function resolveIconId(id) {
-  const normalized = normalizeId(id);
-  const shortId = normalized.replace(/^minecraft:/, "");
-  if (!shortId) return normalized;
-
-  if (ICON_EXACT_ALIASES[shortId]) {
-    return `minecraft:${ICON_EXACT_ALIASES[shortId]}`;
-  }
-  if (shortId.startsWith("potted_")) {
-    return `minecraft:${shortId.slice(7)}`;
-  }
-  if (shortId.endsWith("_wall_sign")) {
-    return `minecraft:${shortId.replace("_wall_sign", "_sign")}`;
-  }
-  if (shortId.endsWith("_wall_hanging_sign")) {
-    return `minecraft:${shortId.replace("_wall_hanging_sign", "_hanging_sign")}`;
-  }
-  if (shortId.endsWith("_wall_banner")) {
-    return `minecraft:${shortId.replace("_wall_banner", "_banner")}`;
-  }
-  if (shortId.endsWith("_wall_head")) {
-    return `minecraft:${shortId.replace("_wall_head", "_head")}`;
-  }
-  if (shortId.endsWith("_wall_skull")) {
-    return `minecraft:${shortId.replace("_wall_skull", "_skull")}`;
-  }
-  if (shortId.endsWith("_wall_fan")) {
-    return `minecraft:${shortId.replace("_wall_fan", "_fan")}`;
-  }
-  if (shortId === "candle_cake" || shortId.endsWith("_candle_cake")) {
-    return "minecraft:cake";
-  }
-  if (shortId.endsWith("_cauldron")) {
-    return "minecraft:cauldron";
-  }
-  return normalized;
-}
-
-function isTechnicalBlockState(id) {
-  const shortId = String(id || "").replace(/^minecraft:/, "");
-  if (!shortId) return false;
-  if (ICON_EXACT_ALIASES[shortId]) return true;
-  if (
-    /^(air|cave_air|void_air|moving_piston|fire|soul_fire|nether_portal|end_portal|end_gateway|bubble_column)$/.test(
-      shortId
-    )
-  ) {
-    return true;
-  }
-  return (
-    shortId.startsWith("potted_") ||
-    shortId.endsWith("_wall_sign") ||
-    shortId.endsWith("_wall_hanging_sign") ||
-    shortId.endsWith("_wall_banner") ||
-    shortId.endsWith("_wall_head") ||
-    shortId.endsWith("_wall_skull") ||
-    shortId.endsWith("_wall_fan") ||
-    shortId === "candle_cake" ||
-    shortId.endsWith("_candle_cake") ||
-    shortId.endsWith("_cauldron")
-  );
+  return rest > 0 ? `${stacks} ${stackWord} + ${rest}` : `${stacks} ${stackWord}`;
 }
 
 function installSafeIconHelper() {
@@ -2610,29 +2173,23 @@ function installSafeIconHelper() {
     typeof H.colorForItem === "function" ? H.colorForItem.bind(H) : null;
 
   if (originalColorForItem) {
-    H.colorForItem = function safeColorForItem(rawId) {
-      return originalColorForItem(resolveIconId(rawId));
-    };
+    H.colorForItem = rawId => originalColorForItem(resolveCanonicalItemId(rawId));
   }
 
   H.applyItemIcon = function safeApplyItemIcon(iconEl, rawId) {
-    const resolvedId = resolveIconId(rawId);
+    const resolvedId = resolveCanonicalItemId(rawId);
 
     if (originalColorForItem && iconEl) {
       iconEl.style.setProperty("--swatch-color", originalColorForItem(resolvedId));
     }
 
-    if (!iconEl || failedIconIds.has(resolvedId)) {
-      return;
-    }
+    if (!iconEl || failedIconIds.has(resolvedId)) return;
 
     originalApplyItemIcon(iconEl, resolvedId);
 
     const img = iconEl.querySelector("img");
     if (img) {
-      img.loading = "lazy";
       img.decoding = "async";
-
       if (!img.dataset.safeErrorBound) {
         img.dataset.safeErrorBound = "1";
         img.addEventListener(
@@ -2657,56 +2214,47 @@ function createItemIcon(id, isBlock) {
   const icon = document.createElement("span");
   icon.className = `mc-list-icon${isBlock === false ? " is-item" : ""}`;
   icon.setAttribute("aria-hidden", "true");
-
-  const H = window.CraftLogHelpers;
-  if (H?.colorForItem) {
-    icon.style.setProperty("--swatch-color", H.colorForItem(id));
-  }
-  if (H?.applyItemIcon) {
-    H.applyItemIcon(icon, id);
-  }
+  window.CraftLogHelpers?.applyItemIcon?.(icon, id);
 
   return icon;
 }
 
 function makeButton(label, className, action) {
   const button = document.createElement("button");
-
   button.type = "button";
   button.className = className;
   button.textContent = label;
   button.addEventListener("click", action);
-
   return button;
 }
 
+const BACKUP_ICONS = {
+  litematica: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>`,
+  clipboard: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h6"/></svg>`,
+  export: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>`,
+  import: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14"/></svg>`
+};
+
 function createBackupButton(mode, labelText, titleText, action) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className =
-    `quiet-button sidebar-backup-btn${mode === "litematica" ? " sidebar-litematica-btn" : ""}`;
+  const isAccent = mode === "litematica" || mode === "clipboard";
+  const button = makeButton(
+    "",
+    `quiet-button sidebar-backup-btn${isAccent ? " sidebar-litematica-btn" : ""}`,
+    action
+  );
   button.title = titleText;
   button.setAttribute("aria-label", labelText);
 
   const iconWrap = document.createElement("span");
   iconWrap.className = "sidebar-backup-btn-icon";
   iconWrap.setAttribute("aria-hidden", "true");
-
-  if (mode === "litematica") {
-    iconWrap.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>`;
-  } else if (mode === "export") {
-    iconWrap.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>`;
-  } else {
-    iconWrap.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14"/></svg>`;
-  }
+  iconWrap.innerHTML = BACKUP_ICONS[mode] || "";
 
   const labelSpan = document.createElement("span");
   labelSpan.className = "sidebar-backup-btn-text";
   labelSpan.textContent = labelText;
 
   button.append(iconWrap, labelSpan);
-  button.addEventListener("click", action);
-
   return button;
 }
 
@@ -2737,16 +2285,11 @@ function createProjectNotesPanel(list) {
 
   titleGroup.append(chevron, icon, title);
 
+  const formatPreview = raw => String(raw || "").trim().replace(/\s*\n+\s*/g, " · ");
   const preview = document.createElement("span");
   preview.className = "project-notes-preview";
-
-  function formatPreview(rawText) {
-    return String(rawText || "")
-      .trim()
-      .replace(/\s*\n+\s*/g, " · ");
-  }
-
   preview.textContent = formatPreview(list.notes);
+
   summary.append(titleGroup, preview);
 
   const body = document.createElement("div");
@@ -2766,10 +2309,14 @@ function createProjectNotesPanel(list) {
   hint.className = "project-notes-hint";
   hint.textContent = t().notesSavedHint;
 
-  const clearBtn = document.createElement("button");
-  clearBtn.type = "button";
-  clearBtn.className = "project-notes-clear";
-  clearBtn.textContent = t().notesClear;
+  const clearBtn = makeButton(t().notesClear, "project-notes-clear", () => {
+    textarea.value = "";
+    list.notes = "";
+    preview.textContent = "";
+    clearBtn.hidden = true;
+    save();
+    textarea.focus();
+  });
   clearBtn.hidden = textarea.value.trim().length === 0;
 
   textarea.addEventListener("input", () => {
@@ -2777,15 +2324,6 @@ function createProjectNotesPanel(list) {
     preview.textContent = formatPreview(list.notes);
     clearBtn.hidden = textarea.value.trim().length === 0;
     save();
-  });
-
-  clearBtn.addEventListener("click", () => {
-    textarea.value = "";
-    list.notes = "";
-    preview.textContent = "";
-    clearBtn.hidden = true;
-    save();
-    textarea.focus();
   });
 
   details.addEventListener("toggle", () => {
@@ -2803,10 +2341,7 @@ function createProjectNotesPanel(list) {
 function openListCompleteDialog(list) {
   if (!list) return;
 
-  const existingDialog = document.getElementById("craftlog-complete-dialog");
-  if (existingDialog) {
-    existingDialog.remove();
-  }
+  document.getElementById("craftlog-complete-dialog")?.remove();
 
   const dialog = document.createElement("dialog");
   dialog.id = "craftlog-complete-dialog";
@@ -2860,65 +2395,31 @@ function openListCompleteDialog(list) {
   const actions = document.createElement("div");
   actions.className = "tc-dialog-actions";
 
-  const closeDialog = () => {
-    if (dialog.open) {
-      dialog.close();
-    }
-    dialog.remove();
-  };
+  let closeDialog = () => {};
 
-  const resetBtn = makeButton(
-    t().resetList,
-    "quiet-button",
-    () => {
-      if (Array.isArray(list.items)) {
-        for (const entry of list.items) {
-          entry.done = false;
-        }
-      }
-      list.summaryInventory = {};
-      closeDialog();
-      save();
-      render();
+  const resetBtn = makeButton(t().resetList, "quiet-button", () => {
+    if (Array.isArray(list.items)) {
+      for (const entry of list.items) entry.done = false;
     }
-  );
+    list.summaryInventory = {};
+    closeDialog();
+    save();
+    render();
+  });
 
-  const deleteBtn = makeButton(
-    t().deleteListAction,
-    "danger-button",
-    () => {
-      closeDialog();
-      deleteListWithUndo(list);
-    }
-  );
+  const deleteBtn = makeButton(t().deleteListAction, "danger-button", () => {
+    closeDialog();
+    deleteListWithUndo(list);
+  });
 
-  const keepBtn = makeButton(
-    t().keepList,
-    "primary-button",
-    closeDialog
-  );
+  const keepBtn = makeButton(t().keepList, "primary-button", () => closeDialog());
 
   actions.append(resetBtn, deleteBtn, keepBtn);
   dialogBody.append(message, actions);
   inner.append(dialogBody);
   dialog.append(inner);
 
-  closeBtn.addEventListener("click", closeDialog);
-  dialog.addEventListener("click", event => {
-    if (event.target === dialog) {
-      closeDialog();
-    }
-  });
-  dialog.addEventListener("close", () => {
-    dialog.remove();
-  });
-
-  document.body.append(dialog);
-  if (typeof dialog.showModal === "function") {
-    dialog.showModal();
-  } else {
-    dialog.setAttribute("open", "");
-  }
+  closeDialog = openModalDialog(dialog, closeBtn);
 }
 
 window.openListCompleteDialog = openListCompleteDialog;
@@ -2946,11 +2447,7 @@ function editDistance(a, b) {
     const curr = [i];
     for (let j = 1; j <= b.length; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      curr[j] = Math.min(
-        curr[j - 1] + 1,
-        prev[j] + 1,
-        prev[j - 1] + cost
-      );
+      curr[j] = Math.min(curr[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost);
     }
     prev = curr;
   }
@@ -2960,22 +2457,14 @@ function editDistance(a, b) {
 
 function scoreTarget(query, tokens, target) {
   if (!target) return 0;
-
   if (target === query) return 1000;
-  if (target.startsWith(query)) {
-    return 850 - Math.min(target.length - query.length, 50);
-  }
+  if (target.startsWith(query)) return 850 - Math.min(target.length - query.length, 50);
 
   const words = target.split(/[\s-]+/);
-
-  if (words.some(word => word.startsWith(query))) {
-    return 700 - Math.min(target.length, 50);
-  }
+  if (words.some(word => word.startsWith(query))) return 700 - Math.min(target.length, 50);
 
   const index = target.indexOf(query);
-  if (index !== -1) {
-    return 550 - Math.min(index, 50);
-  }
+  if (index !== -1) return 550 - Math.min(index, 50);
 
   if (tokens.length > 1 && tokens.every(token => target.includes(token))) {
     return 480 - Math.min(target.length, 50);
@@ -3007,9 +2496,7 @@ function searchCatalog(rawQuery) {
   const results = [];
 
   for (const entry of catalog) {
-    if (isTechnicalBlockState(entry.id)) {
-      continue;
-    }
+    if (isTechnicalBlockState(entry.id)) continue;
 
     const deText = entry._searchDe ?? normalizeSearchText(entry.de);
     const enText = entry._searchEn ?? normalizeSearchText(entry.en || entry.id);
@@ -3032,8 +2519,7 @@ function searchCatalog(rawQuery) {
     }
   }
 
-  results.sort((a, b) => b.score - a.score);
-  return results;
+  return results.sort((a, b) => b.score - a.score);
 }
 
 function createSearch(form, quantityInput, list) {
@@ -3086,19 +2572,9 @@ function createSearch(form, quantityInput, list) {
 
     selectedIcon.className = `mc-list-icon search-selected-icon${entry.isBlock === false ? " is-item" : ""}`;
     selectedIcon.classList.remove("has-icon");
+    selectedIcon.querySelector("img.mc-icon-img")?.remove();
 
-    const oldImg = selectedIcon.querySelector("img.mc-icon-img");
-    if (oldImg) {
-      oldImg.remove();
-    }
-
-    const H = window.CraftLogHelpers;
-    if (H?.colorForItem) {
-      selectedIcon.style.setProperty("--swatch-color", H.colorForItem(entry.id));
-    }
-    if (H?.applyItemIcon) {
-      H.applyItemIcon(selectedIcon, entry.id);
-    }
+    window.CraftLogHelpers?.applyItemIcon?.(selectedIcon, entry.id);
 
     selectedIcon.hidden = false;
     wrapper.classList.add("has-selected-icon");
@@ -3130,7 +2606,6 @@ function createSearch(form, quantityInput, list) {
 
   function updateSuggestions() {
     const query = input.value.trim();
-
     suggestions.replaceChildren();
 
     if (!query) {
@@ -3151,7 +2626,6 @@ function createSearch(form, quantityInput, list) {
       main.className = "suggestion-main";
 
       const icon = createItemIcon(entry.id, entry.isBlock);
-
       const title = document.createElement("span");
       title.className = "suggestion-title";
       const primaryName = nameOf(entry.id);
@@ -3166,19 +2640,11 @@ function createSearch(form, quantityInput, list) {
 
       const type = document.createElement("span");
       type.className = "suggestion-type";
-      type.textContent =
-        entry.isBlock ? t().block : t().item;
+      type.textContent = entry.isBlock ? t().block : t().item;
 
       option.append(main, type);
-
-      option.addEventListener(
-        "mousedown",
-        event => event.preventDefault()
-      );
-
-      option.addEventListener("click", () => {
-        choose(entry);
-      });
+      option.addEventListener("mousedown", event => event.preventDefault());
+      option.addEventListener("click", () => choose(entry));
 
       suggestions.append(option);
     }
@@ -3186,25 +2652,16 @@ function createSearch(form, quantityInput, list) {
     if (matches.length === 0 || matches.length > 40) {
       const note = document.createElement("div");
       note.className = "suggestion-note";
-
       note.textContent =
-        matches.length === 0
-          ? t().noResults
-          : t().narrow(matches.length);
-
+        matches.length === 0 ? t().noResults : t().narrow(matches.length);
       suggestions.append(note);
     }
 
     suggestions.hidden = false;
   }
 
-  clearButton.addEventListener("mousedown", event => {
-    event.preventDefault();
-  });
-
-  clearButton.addEventListener("click", () => {
-    resetSearchField();
-  });
+  clearButton.addEventListener("mousedown", event => event.preventDefault());
+  clearButton.addEventListener("click", resetSearchField);
 
   input.addEventListener("input", () => {
     selectedId = null;
@@ -3215,35 +2672,21 @@ function createSearch(form, quantityInput, list) {
 
   input.addEventListener("keydown", event => {
     if (event.key === "Escape") {
-      if (!suggestions.hidden) {
-        closeSuggestions();
-      } else if (input.value) {
-        resetSearchField();
-      }
+      if (!suggestions.hidden) closeSuggestions();
+      else if (input.value) resetSearchField();
       return;
     }
 
-    if (
-      suggestions.hidden ||
-      matches.length === 0
-    ) {
-      return;
-    }
+    if (suggestions.hidden || matches.length === 0) return;
 
-    const visibleCount = Math.min(
-      matches.length,
-      40
-    );
+    const visibleCount = Math.min(matches.length, 40);
 
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      activeIndex =
-        (activeIndex + 1) % visibleCount;
+      activeIndex = (activeIndex + 1) % visibleCount;
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
-      activeIndex =
-        (activeIndex - 1 + visibleCount) %
-        visibleCount;
+      activeIndex = (activeIndex - 1 + visibleCount) % visibleCount;
     } else if (event.key === "Enter") {
       event.preventDefault();
       choose(matches[activeIndex]);
@@ -3252,19 +2695,12 @@ function createSearch(form, quantityInput, list) {
       return;
     }
 
-    suggestions
-      .querySelectorAll("button")
-      .forEach((option, index) => {
-        option.classList.toggle(
-          "active",
-          index === activeIndex
-        );
-      });
+    suggestions.querySelectorAll("button").forEach((option, index) => {
+      option.classList.toggle("active", index === activeIndex);
+    });
   });
 
-  input.addEventListener("blur", () => {
-    setTimeout(closeSuggestions, 150);
-  });
+  input.addEventListener("blur", () => setTimeout(closeSuggestions, 150));
 
   form.addEventListener("submit", event => {
     event.preventDefault();
@@ -3276,11 +2712,7 @@ function createSearch(form, quantityInput, list) {
     }
 
     const quantity = Number(quantityInput.value);
-
-    if (
-      !Number.isSafeInteger(quantity) ||
-      quantity < 1
-    ) {
+    if (!Number.isSafeInteger(quantity) || quantity < 1) {
       alert(t().invalidQuantity);
       return;
     }
@@ -3319,16 +2751,12 @@ function createSearch(form, quantityInput, list) {
 }
 
 function openItemSourceDialog(item, initialFilter = "all") {
-  const id = normalizeId(item.blockId);
-
-  if (typeof window.openMaterialSourceDialog === "function") {
-    window.openMaterialSourceDialog({
-      id,
-      totalNeeded: item.quantity,
-      quantityLabel: t().plannedQuantity,
-      initialFilter
-    });
-  }
+  window.openMaterialSourceDialog?.({
+    id: normalizeId(item.blockId),
+    totalNeeded: item.quantity,
+    quantityLabel: t().plannedQuantity,
+    initialFilter
+  });
 }
 
 function createSourceBadges(item) {
@@ -3360,13 +2788,11 @@ function createSourceBadges(item) {
     for (const type of orderedTypes) {
       const meta = SOURCE_CATEGORY_META[type];
       const count = counts.get(type) || 0;
-      const labelText = meta
-        ? (language === "de" ? meta.de : meta.en)
-        : type;
+      const labelText = meta ? (language === "de" ? meta.de : meta.en) : type;
 
-      const badge = document.createElement("button");
-      badge.type = "button";
-      badge.className = `item-source-badge item-source-badge--${type}`;
+      const badge = makeButton("", `item-source-badge item-source-badge--${type}`, () => {
+        openItemSourceDialog(item, type);
+      });
       badge.title = t().showSourcesFor(itemName);
       badge.setAttribute("aria-label", `${itemName}: ${labelText} (${count})`);
 
@@ -3389,10 +2815,6 @@ function createSourceBadges(item) {
         badge.append(countSpan);
       }
 
-      badge.addEventListener("click", () => {
-        openItemSourceDialog(item, type);
-      });
-
       row.append(badge);
     }
 
@@ -3401,9 +2823,9 @@ function createSourceBadges(item) {
 
   if (recipes.length > 0) {
     const meta = SOURCE_CATEGORY_META.craft;
-    const badge = document.createElement("button");
-    badge.type = "button";
-    badge.className = "item-source-badge item-source-badge--craft";
+    const badge = makeButton("", "item-source-badge item-source-badge--craft", () => {
+      openItemSourceDialog(item, "all");
+    });
     badge.title = t().showSourcesFor(itemName);
 
     const iconSpan = document.createElement("span");
@@ -3415,31 +2837,24 @@ function createSourceBadges(item) {
     textSpan.textContent = language === "de" ? meta.de : meta.en;
 
     badge.append(iconSpan, textSpan);
-    badge.addEventListener("click", () => {
-      openItemSourceDialog(item, "all");
-    });
-
     row.append(badge);
     return row;
   }
 
-  const fallbackBadge = document.createElement("button");
-  fallbackBadge.type = "button";
-  fallbackBadge.className = "item-source-badge item-source-badge--empty";
+  const fallbackBadge = makeButton(
+    `ⓘ ${t().source}`,
+    "item-source-badge item-source-badge--empty",
+    () => openItemSourceDialog(item, "all")
+  );
   fallbackBadge.title = t().showSourcesFor(itemName);
-  fallbackBadge.textContent = `ⓘ ${t().source}`;
-  fallbackBadge.addEventListener("click", () => {
-    openItemSourceDialog(item, "all");
-  });
-
   row.append(fallbackBadge);
+
   return row;
 }
 
 function renderItem(list, item) {
   const card = document.createElement("div");
-  card.className =
-    `item${item.done ? " completed" : ""}`;
+  card.className = `item${item.done ? " completed" : ""}`;
 
   if (item.id === highlightedItemId) {
     card.classList.add("is-highlighted");
@@ -3457,15 +2872,9 @@ function renderItem(list, item) {
   checkbox.checked = Boolean(item.done);
 
   checkbox.addEventListener("change", () => {
-    const wasAllDone =
-      list.items.length > 0 &&
-      list.items.every(entry => Boolean(entry.done));
-
+    const wasAllDone = list.items.length > 0 && list.items.every(entry => Boolean(entry.done));
     item.done = checkbox.checked;
-
-    const isNowAllDone =
-      list.items.length > 0 &&
-      list.items.every(entry => Boolean(entry.done));
+    const isNowAllDone = list.items.length > 0 && list.items.every(entry => Boolean(entry.done));
 
     save();
     render();
@@ -3475,151 +2884,103 @@ function renderItem(list, item) {
     }
   });
 
-  const entry = catalogById.get(
-    normalizeId(item.blockId)
-  );
-
-  const icon = createItemIcon(
-    item.blockId,
-    entry?.isBlock
-  );
+  const entry = catalogById.get(normalizeId(item.blockId));
+  const icon = createItemIcon(item.blockId, entry?.isBlock);
 
   const titleWrapper = document.createElement("span");
   titleWrapper.className = "item-text-group";
 
   const title = document.createElement("span");
   title.className = "item-name";
-  title.textContent =
-    `${item.quantity} × ${nameOf(item.blockId)}`;
+  title.textContent = `${item.quantity} × ${nameOf(item.blockId)}`;
 
   const type = document.createElement("span");
   type.className = "item-meta";
-
   const baseType = entry?.isBlock ? t().block : t().item;
   const stackHint = formatStackHint(item.quantity);
-  type.textContent = stackHint
-    ? `${baseType} · ${stackHint}`
-    : baseType;
+  type.textContent = stackHint ? `${baseType} · ${stackHint}` : baseType;
 
   titleWrapper.append(title, type);
   label.append(checkbox, icon, titleWrapper);
 
-  const remove = makeButton(
-    "×",
-    "remove-button",
-    () => {
-      const removedIndex = list.items.findIndex(
-        entry => entry.id === item.id
-      );
-      if (removedIndex === -1) return;
+  const remove = makeButton("×", "remove-button", () => {
+    const removedIndex = list.items.findIndex(entry => entry.id === item.id);
+    if (removedIndex === -1) return;
 
-      const removedItem = { ...list.items[removedIndex] };
-      const targetListId = list.id;
+    const removedItem = { ...list.items[removedIndex] };
+    const targetListId = list.id;
 
-      list.items.splice(removedIndex, 1);
+    list.items.splice(removedIndex, 1);
+    save();
+    render();
 
-      save();
-      render();
+    showToast({
+      getMessage: () =>
+        t().itemRemovedNotice(`${removedItem.quantity} × ${nameOf(removedItem.blockId)}`),
+      onUndo: () => {
+        const targetList = state.lists.find(entry => entry.id === targetListId);
+        if (!targetList) return;
+        if (!Array.isArray(targetList.items)) targetList.items = [];
 
-      showToast({
-        getMessage: () =>
-          t().itemRemovedNotice(
-            `${removedItem.quantity} × ${nameOf(removedItem.blockId)}`
-          ),
-        onUndo: () => {
-          const targetList = state.lists.find(
-            entry => entry.id === targetListId
-          );
-          if (!targetList) return;
-
-          if (!Array.isArray(targetList.items)) {
-            targetList.items = [];
-          }
-
-          const insertAt = Math.min(
-            removedIndex,
-            targetList.items.length
-          );
-          targetList.items.splice(insertAt, 0, removedItem);
-          activeListId = targetList.id;
-          highlightedItemId = removedItem.id;
-
-          save();
-          render();
-        }
-      });
-    }
-  );
+        targetList.items.splice(Math.min(removedIndex, targetList.items.length), 0, removedItem);
+        activeListId = targetList.id;
+        highlightedItemId = removedItem.id;
+        save();
+        render();
+      }
+    });
+  });
 
   remove.setAttribute("aria-label", t().remove);
   remove.title = t().remove;
 
-  const edit = makeButton(
-    t().editQuantity,
-    "edit-quantity-button",
-    () => {
-      const existingForm = card.querySelector(
-        ".quantity-edit-form"
-      );
+  const edit = makeButton(t().editQuantity, "edit-quantity-button", () => {
+    const existingForm = card.querySelector(".quantity-edit-form");
+    if (existingForm) {
+      existingForm.remove();
+      return;
+    }
 
-      if (existingForm) {
-        existingForm.remove();
+    const form = document.createElement("form");
+    form.className = "quantity-edit-form";
+
+    const input = document.createElement("input");
+    input.className = "quantity-edit-input";
+    input.type = "number";
+    input.min = "1";
+    input.step = "1";
+    input.required = true;
+    input.value = String(item.quantity);
+    input.setAttribute("aria-label", t().quantity);
+
+    const submit = document.createElement("button");
+    submit.type = "submit";
+    submit.className = "primary-button";
+    submit.textContent = t().save;
+
+    const cancel = makeButton(t().cancel, "quiet-button", () => form.remove());
+
+    form.append(input, submit, cancel);
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+
+      const quantity = Number(input.value);
+      if (!Number.isSafeInteger(quantity) || quantity < 1) {
+        alert(t().invalidQuantity);
+        input.focus();
         return;
       }
 
-      const form = document.createElement("form");
-      form.className = "quantity-edit-form";
+      item.quantity = quantity;
+      highlightedItemId = item.id;
+      save();
+      render();
+    });
 
-      const input = document.createElement("input");
-      input.className = "quantity-edit-input";
-      input.type = "number";
-      input.min = "1";
-      input.step = "1";
-      input.required = true;
-      input.value = String(item.quantity);
-      input.setAttribute(
-        "aria-label",
-        t().quantity
-      );
-
-      const submit = document.createElement("button");
-      submit.type = "submit";
-      submit.className = "primary-button";
-      submit.textContent = t().save;
-
-      const cancel = makeButton(
-        t().cancel,
-        "quiet-button",
-        () => form.remove()
-      );
-
-      form.append(input, submit, cancel);
-
-      form.addEventListener("submit", event => {
-        event.preventDefault();
-
-        const quantity = Number(input.value);
-
-        if (
-          !Number.isSafeInteger(quantity) ||
-          quantity < 1
-        ) {
-          alert(t().invalidQuantity);
-          input.focus();
-          return;
-        }
-
-        item.quantity = quantity;
-        highlightedItemId = item.id;
-        save();
-        render();
-      });
-
-      card.append(form);
-      input.focus();
-      input.select();
-    }
-  );
+    card.append(form);
+    input.focus();
+    input.select();
+  });
 
   const actions = document.createElement("div");
   actions.className = "item-actions";
@@ -3636,10 +2997,15 @@ function createItemsToolbar(doneCount) {
   toolbar.className = "items-toolbar";
 
   const hideCompleted = Boolean(state.hideCompleted);
-  const filterBtn = document.createElement("button");
-  filterBtn.type = "button";
-  filterBtn.className =
-    `items-filter-toggle${hideCompleted ? " is-active" : ""}`;
+  const filterBtn = makeButton(
+    "",
+    `items-filter-toggle${hideCompleted ? " is-active" : ""}`,
+    () => {
+      state.hideCompleted = !Boolean(state.hideCompleted);
+      save();
+      render();
+    }
+  );
   filterBtn.setAttribute("aria-pressed", String(hideCompleted));
 
   const iconSpan = document.createElement("span");
@@ -3651,44 +3017,30 @@ function createItemsToolbar(doneCount) {
 
   const labelSpan = document.createElement("span");
   labelSpan.textContent =
-    hideCompleted && doneCount > 0
-      ? t().hideCompletedCount(doneCount)
-      : t().hideCompleted;
+    hideCompleted && doneCount > 0 ? t().hideCompletedCount(doneCount) : t().hideCompleted;
 
   filterBtn.append(iconSpan, labelSpan);
-  filterBtn.addEventListener("click", () => {
-    state.hideCompleted = !Boolean(state.hideCompleted);
-    save();
-    render();
-  });
 
   const sortSelect = document.createElement("select");
   sortSelect.className = "items-sort-select";
   sortSelect.setAttribute("aria-label", t().sortLabel);
 
-  const sortOptions = [
+  for (const opt of [
     { value: "manual", label: t().sortManual },
     { value: "quantity-desc", label: t().sortQuantityDesc },
     { value: "quantity-asc", label: t().sortQuantityAsc },
     { value: "name-asc", label: t().sortNameAsc },
     { value: "name-desc", label: t().sortNameDesc }
-  ];
-
-  for (const opt of sortOptions) {
+  ]) {
     const option = document.createElement("option");
     option.value = opt.value;
     option.textContent = opt.label;
     sortSelect.append(option);
   }
 
-  sortSelect.value = SORT_MODES.includes(state.sortBy)
-    ? state.sortBy
-    : "manual";
-
+  sortSelect.value = SORT_MODES.includes(state.sortBy) ? state.sortBy : "manual";
   sortSelect.addEventListener("change", () => {
-    state.sortBy = SORT_MODES.includes(sortSelect.value)
-      ? sortSelect.value
-      : "manual";
+    state.sortBy = SORT_MODES.includes(sortSelect.value) ? sortSelect.value : "manual";
     save();
     render();
   });
@@ -3698,9 +3050,7 @@ function createItemsToolbar(doneCount) {
 }
 
 function renderWorkspace() {
-  const workspace =
-    document.querySelector("#workspace");
-
+  const workspace = document.querySelector("#workspace");
   workspace.replaceChildren();
 
   const status = document.createElement("p");
@@ -3712,21 +3062,14 @@ function renderWorkspace() {
   } else if (!minecraft) {
     status.textContent = t().loading;
   } else {
-    status.textContent =
-      t().loaded(catalog.length);
-
-    const missing =
-      minecraft.missingGerman?.length || 0;
-
+    status.textContent = t().loaded(catalog.length);
+    const missing = minecraft.missingGerman?.length || 0;
     if (language === "de" && missing > 0) {
-      status.textContent +=
-        ` ${t().incompleteNames(missing)}`;
+      status.textContent += ` ${t().incompleteNames(missing)}`;
     }
   }
 
-  const list = state.lists.find(
-    entry => entry.id === activeListId
-  );
+  const list = state.lists.find(entry => entry.id === activeListId);
 
   if (!list) {
     const eyebrow = document.createElement("p");
@@ -3743,28 +3086,22 @@ function renderWorkspace() {
     const emptyText = document.createElement("span");
     emptyText.textContent = t().noListsText;
 
-    const importBtn = makeButton(
-      t().litematicaImport,
-      "quiet-button",
-      triggerLitematicaPicker
-    );
+    const emptyActions = document.createElement("div");
+    emptyActions.className = "heading-actions";
+
+    const importBtn = makeButton(t().litematicaImport, "quiet-button", triggerLitematicaPicker);
     importBtn.disabled = !minecraft;
 
-    empty.append(emptyText, importBtn);
+    const pasteBtn = makeButton(t().clipboardImport, "quiet-button", triggerClipboardImport);
+    pasteBtn.disabled = !minecraft;
 
-    workspace.append(
-      eyebrow,
-      heading,
-      status,
-      empty
-    );
-
+    emptyActions.append(importBtn, pasteBtn);
+    empty.append(emptyText, emptyActions);
+    workspace.append(eyebrow, heading, status, empty);
     return;
   }
 
-  if (!Array.isArray(list.items)) {
-    list.items = [];
-  }
+  if (!Array.isArray(list.items)) list.items = [];
 
   const headingRow = document.createElement("div");
   headingRow.className = "workspace-heading";
@@ -3783,66 +3120,43 @@ function renderWorkspace() {
   description.className = "description";
   description.textContent = t().listDescription;
 
-  headingText.append(
-    eyebrow,
-    heading,
-    description
-  );
+  headingText.append(eyebrow, heading, description);
 
   const actions = document.createElement("div");
   actions.className = "heading-actions";
 
-  const duplicateBtn = makeButton(
-    t().duplicate,
-    "quiet-button",
-    () => duplicateListAsTemplate(list)
+  const duplicateBtn = makeButton(t().duplicate, "quiet-button", () =>
+    duplicateListAsTemplate(list)
   );
   duplicateBtn.title = t().duplicateTitle;
 
   actions.append(
     duplicateBtn,
     makeButton(t().rename, "quiet-button", () => {
-      const name = prompt(
-        t().renameQuestion,
-        list.name
-      )?.trim();
-
+      const name = prompt(t().renameQuestion, list.name)?.trim();
       if (!name) return;
-
       list.name = name;
       save();
       render();
     }),
-
     makeButton(t().delete, "danger-button", () => {
-      if (!confirm(t().deleteQuestion(list.name))) {
-        return;
+      if (confirm(t().deleteQuestion(list.name))) {
+        deleteListWithUndo(list);
       }
-
-      deleteListWithUndo(list);
     })
   );
 
   headingRow.append(headingText, actions);
 
-  const notesPanel = createProjectNotesPanel(list);
-
-  const done = list.items.filter(
-    item => item.done
-  ).length;
+  const done = list.items.filter(item => item.done).length;
 
   const progress = document.createElement("div");
-
   const track = document.createElement("div");
   track.className = "progress-track";
 
   const fill = document.createElement("div");
   fill.className = "progress-fill";
-
-  fill.style.width = list.items.length
-    ? `${done / list.items.length * 100}%`
-    : "0%";
-
+  fill.style.width = list.items.length ? `${(done / list.items.length) * 100}%` : "0%";
   track.append(fill);
 
   const progressLabel = document.createElement("div");
@@ -3852,14 +3166,9 @@ function renderWorkspace() {
   progressTitle.textContent = t().progress;
 
   const progressCount = document.createElement("span");
-  progressCount.textContent =
-    t().completed(done, list.items.length);
+  progressCount.textContent = t().completed(done, list.items.length);
 
-  progressLabel.append(
-    progressTitle,
-    progressCount
-  );
-
+  progressLabel.append(progressTitle, progressCount);
   progress.append(track, progressLabel);
 
   const panel = document.createElement("section");
@@ -3872,19 +3181,11 @@ function renderWorkspace() {
   panelTitle.className = "panel-title";
   panelTitle.textContent = t().addHeading;
 
-  const panelDescription =
-    document.createElement("p");
+  const panelDescription = document.createElement("p");
+  panelDescription.className = "panel-description";
+  panelDescription.textContent = t().addDescription;
 
-  panelDescription.className =
-    "panel-description";
-
-  panelDescription.textContent =
-    t().addDescription;
-
-  panelHeader.append(
-    panelTitle,
-    panelDescription
-  );
+  panelHeader.append(panelTitle, panelDescription);
 
   const form = document.createElement("form");
   form.className = "add-form";
@@ -3900,24 +3201,16 @@ function renderWorkspace() {
   quantity.value = "1";
   quantity.required = true;
   quantity.disabled = !minecraft;
-  quantity.setAttribute(
-    "aria-label",
-    t().quantity
-  );
+  quantity.setAttribute("aria-label", t().quantity);
 
   let isInitialQuantity = true;
-
   quantity.addEventListener("input", () => {
     isInitialQuantity = false;
   });
 
   function applyQuickAmount(step) {
     const current = Math.floor(Number(quantity.value) || 0);
-    if (isInitialQuantity || current < 1) {
-      quantity.value = String(step);
-    } else {
-      quantity.value = String(current + step);
-    }
+    quantity.value = String(isInitialQuantity || current < 1 ? step : current + step);
     isInitialQuantity = false;
     quantity.focus();
   }
@@ -3925,16 +3218,12 @@ function renderWorkspace() {
   const quickButtons = document.createElement("div");
   quickButtons.className = "quantity-quick-buttons";
 
-  const quick16 = makeButton("+16", "quantity-quick-btn", () => {
-    applyQuickAmount(16);
-  });
+  const quick16 = makeButton("+16", "quantity-quick-btn", () => applyQuickAmount(16));
   quick16.title = t().addPlus16;
   quick16.setAttribute("aria-label", t().addPlus16);
   quick16.disabled = !minecraft;
 
-  const quick64 = makeButton("+64", "quantity-quick-btn", () => {
-    applyQuickAmount(64);
-  });
+  const quick64 = makeButton("+64", "quantity-quick-btn", () => applyQuickAmount(64));
   quick64.title = t().addPlus64;
   quick64.setAttribute("aria-label", t().addPlus64);
   quick64.disabled = !minecraft;
@@ -3942,11 +3231,7 @@ function renderWorkspace() {
   quickButtons.append(quick16, quick64);
   quantityGroup.append(quantity, quickButtons);
 
-  const search = createSearch(
-    form,
-    quantity,
-    list
-  );
+  const search = createSearch(form, quantity, list);
 
   const addButton = document.createElement("button");
   addButton.type = "submit";
@@ -3960,16 +3245,13 @@ function renderWorkspace() {
   const isItemsOpen = list.itemsOpen !== false;
 
   const itemsTitle = document.createElement("h2");
-  itemsTitle.className =
-    "section-label items-heading";
+  itemsTitle.className = "section-label items-heading";
 
   const itemsToggleBtn = document.createElement("button");
   itemsToggleBtn.type = "button";
   itemsToggleBtn.className = "items-heading-toggle";
   itemsToggleBtn.setAttribute("aria-expanded", String(isItemsOpen));
-  itemsToggleBtn.title = isItemsOpen
-    ? t().collapseMaterials
-    : t().expandMaterials;
+  itemsToggleBtn.title = isItemsOpen ? t().collapseMaterials : t().expandMaterials;
 
   const itemsChevron = document.createElement("span");
   itemsChevron.className = "items-heading-chevron";
@@ -3993,73 +3275,34 @@ function renderWorkspace() {
   const items = document.createElement("div");
   items.className = "items";
 
-  const summarySlot = document.createElement("div");
-  summarySlot.className = "list-summary-slot";
-
-  function renderSummarySlot() {
-    if (!minecraft) return;
-
-    summarySlot.replaceChildren();
-
-    if (typeof window.createListSummary === "function") {
-      summarySlot.append(
-        window.createListSummary(
-          list,
-          minecraft,
-          nameOf,
-          language,
-          save
-        )
-      );
-    } else {
-      const error = document.createElement("p");
-      error.className = "status";
-      error.textContent = t().totalUnavailable;
-      summarySlot.append(error);
-    }
-  }
-
   const hideCompleted = Boolean(state.hideCompleted);
-  const sortBy = SORT_MODES.includes(state.sortBy)
-    ? state.sortBy
-    : "manual";
+  const sortBy = SORT_MODES.includes(state.sortBy) ? state.sortBy : "manual";
 
-  let visibleItems = hideCompleted
+  const visibleItems = hideCompleted
     ? list.items.filter(item => !item.done)
     : [...list.items];
 
-  if (sortBy === "quantity-desc") {
-    visibleItems.sort(
-      (a, b) =>
-        b.quantity - a.quantity ||
-        nameOf(a.blockId).localeCompare(nameOf(b.blockId), language)
-    );
-  } else if (sortBy === "quantity-asc") {
-    visibleItems.sort(
-      (a, b) =>
-        a.quantity - b.quantity ||
-        nameOf(a.blockId).localeCompare(nameOf(b.blockId), language)
-    );
-  } else if (sortBy === "name-asc") {
-    visibleItems.sort((a, b) =>
-      nameOf(a.blockId).localeCompare(nameOf(b.blockId), language)
-    );
-  } else if (sortBy === "name-desc") {
-    visibleItems.sort((a, b) =>
-      nameOf(b.blockId).localeCompare(nameOf(a.blockId), language)
-    );
+  const sorters = {
+    "quantity-desc": (a, b) =>
+      b.quantity - a.quantity || nameOf(a.blockId).localeCompare(nameOf(b.blockId), language),
+    "quantity-asc": (a, b) =>
+      a.quantity - b.quantity || nameOf(a.blockId).localeCompare(nameOf(b.blockId), language),
+    "name-asc": (a, b) => nameOf(a.blockId).localeCompare(nameOf(b.blockId), language),
+    "name-desc": (a, b) => nameOf(b.blockId).localeCompare(nameOf(a.blockId), language)
+  };
+
+  if (sorters[sortBy]) {
+    visibleItems.sort(sorters[sortBy]);
   }
 
   if (list.items.length === 0) {
     const empty = document.createElement("div");
     empty.className = "empty-state";
 
-    const emptyTitle =
-      document.createElement("strong");
+    const emptyTitle = document.createElement("strong");
     emptyTitle.textContent = t().noItemsTitle;
 
-    const emptyText =
-      document.createElement("span");
+    const emptyText = document.createElement("span");
     emptyText.textContent = t().noItemsText;
 
     empty.append(emptyTitle, emptyText);
@@ -4068,23 +3311,17 @@ function renderWorkspace() {
     const empty = document.createElement("div");
     empty.className = "empty-state empty-filter-state";
 
-    const emptyTitle =
-      document.createElement("strong");
+    const emptyTitle = document.createElement("strong");
     emptyTitle.textContent = t().allHiddenTitle;
 
-    const emptyText =
-      document.createElement("span");
+    const emptyText = document.createElement("span");
     emptyText.textContent = t().allHiddenText;
 
-    const showAllBtn = makeButton(
-      t().showCompletedAction,
-      "quiet-button",
-      () => {
-        state.hideCompleted = false;
-        save();
-        render();
-      }
-    );
+    const showAllBtn = makeButton(t().showCompletedAction, "quiet-button", () => {
+      state.hideCompleted = false;
+      save();
+      render();
+    });
 
     empty.append(emptyTitle, emptyText, showAllBtn);
     items.append(empty);
@@ -4094,49 +3331,51 @@ function renderWorkspace() {
     }
   }
 
-  const itemsToolbar =
-    list.items.length > 0 ? createItemsToolbar(done) : null;
+  const itemsToolbar = list.items.length > 0 ? createItemsToolbar(done) : null;
 
   if (!isItemsOpen) {
     items.hidden = true;
-    if (itemsToolbar) {
-      itemsToolbar.hidden = true;
-    }
+    if (itemsToolbar) itemsToolbar.hidden = true;
   }
 
   itemsToggleBtn.addEventListener("click", () => {
     const nextOpen = list.itemsOpen === false;
     list.itemsOpen = nextOpen;
     items.hidden = !nextOpen;
-    if (itemsToolbar) {
-      itemsToolbar.hidden = !nextOpen;
-    }
+    if (itemsToolbar) itemsToolbar.hidden = !nextOpen;
     itemsChevron.textContent = nextOpen ? "▾" : "▸";
     itemsToggleBtn.setAttribute("aria-expanded", String(nextOpen));
-    itemsToggleBtn.title = nextOpen
-      ? t().collapseMaterials
-      : t().expandMaterials;
+    itemsToggleBtn.title = nextOpen ? t().collapseMaterials : t().expandMaterials;
     save();
   });
 
   workspace.append(
     status,
     headingRow,
-    notesPanel,
+    createProjectNotesPanel(list),
     progress,
     panel,
     itemsTitle
   );
 
-  if (itemsToolbar) {
-    workspace.append(itemsToolbar);
-  }
-
+  if (itemsToolbar) workspace.append(itemsToolbar);
   workspace.append(items);
 
-  // Der Gesamtbedarf steht direkt unter den einzelnen Listeneinträgen.
   if (minecraft) {
-    renderSummarySlot();
+    const summarySlot = document.createElement("div");
+    summarySlot.className = "list-summary-slot";
+
+    if (typeof window.createListSummary === "function") {
+      summarySlot.append(
+        window.createListSummary(list, minecraft, nameOf, language, save)
+      );
+    } else {
+      const error = document.createElement("p");
+      error.className = "status";
+      error.textContent = t().totalUnavailable;
+      summarySlot.append(error);
+    }
+
     workspace.append(summarySlot);
   }
 }
@@ -4169,6 +3408,14 @@ function renderBackupControls(container) {
   );
   litematicaBtn.disabled = !minecraft;
 
+  const clipboardBtn = createBackupButton(
+    "clipboard",
+    t().clipboardImport,
+    t().clipboardImportTitle,
+    triggerClipboardImport
+  );
+  clipboardBtn.disabled = !minecraft;
+
   const exportBtn = createBackupButton(
     "export",
     t().backupExport,
@@ -4192,32 +3439,25 @@ function renderBackupControls(container) {
     "import",
     t().backupImport,
     t().backupImportTitle,
-    () => {
-      fileInput.click();
-    }
+    () => fileInput.click()
   );
 
-  buttonRow.append(litematicaBtn, exportBtn, importBtn, fileInput);
+  buttonRow.append(litematicaBtn, clipboardBtn, exportBtn, importBtn, fileInput);
   backupSection.append(label, buttonRow);
 }
 
 function renderNavigation() {
-  const navigation = document.querySelector(
-    "#list-navigation"
-  );
-
+  const navigation = document.querySelector("#list-navigation");
   navigation.replaceChildren();
 
   for (const list of state.lists) {
-    const button = document.createElement("button");
-    button.type = "button";
+    const button = makeButton("", list.id === activeListId ? "active" : "", () => {
+      activeListId = list.id;
+      render();
+    });
 
     if (list.id === activeListId) {
-      button.className = "active";
-      button.setAttribute(
-        "aria-current",
-        "page"
-      );
+      button.setAttribute("aria-current", "page");
     }
 
     const name = document.createElement("span");
@@ -4226,19 +3466,9 @@ function renderNavigation() {
 
     const count = document.createElement("span");
     count.className = "list-count";
-    count.textContent = String(
-      Array.isArray(list.items)
-        ? list.items.length
-        : 0
-    );
+    count.textContent = String(Array.isArray(list.items) ? list.items.length : 0);
 
     button.append(name, count);
-
-    button.addEventListener("click", () => {
-      activeListId = list.id;
-      render();
-    });
-
     navigation.append(button);
   }
 
@@ -4248,22 +3478,13 @@ function renderNavigation() {
 function updateThemeToggle() {
   if (!themeToggle) return;
 
-  const isDark =
-    document.documentElement.dataset.theme === "dark";
+  const isDark = document.documentElement.dataset.theme === "dark";
+  themeToggle.setAttribute("aria-checked", String(isDark));
 
-  themeToggle.setAttribute(
-    "aria-checked",
-    String(isDark)
-  );
-
-  const label = themeToggle.querySelector(
-    ".theme-label"
-  );
-
+  const label = themeToggle.querySelector(".theme-label");
   if (label) {
-    label.textContent = language === "de"
-      ? (isDark ? "Dunkel" : "Hell")
-      : (isDark ? "Dark" : "Light");
+    label.textContent =
+      language === "de" ? (isDark ? "Dunkel" : "Hell") : (isDark ? "Dark" : "Light");
   }
 
   themeToggle.setAttribute(
@@ -4275,43 +3496,19 @@ function updateThemeToggle() {
 }
 
 function renderFooter() {
-  const project = document.querySelector(
-    "#footer-project"
-  );
+  const project = document.querySelector("#footer-project");
+  const storage = document.querySelector("#footer-storage");
+  const footerData = document.querySelector("#footer-data");
 
-  const storage = document.querySelector(
-    "#footer-storage"
-  );
+  if (project) project.textContent = `CraftLog · Version ${appVersion}`;
+  if (storage) storage.textContent = t().footerStorage;
 
-  const footerData = document.querySelector(
-    "#footer-data"
-  );
-
-  if (project) {
-    project.textContent =
-      `CraftLog · Version ${appVersion}`;
-  }
-
-  if (storage) {
-    storage.textContent = t().footerStorage;
-  }
-
-  // Technischen Erfolgsstatus nicht in der Projektansicht zeigen.
-  const status = document.querySelector(
-    "#workspace .status"
-  );
-
-  if (status && !loadError) {
-    status.remove();
-  }
+  const status = document.querySelector("#workspace .status");
+  if (status && !loadError) status.remove();
 
   if (footerData) {
     footerData.replaceChildren();
-
-    if (loadError && status) {
-      footerData.append(status);
-    }
-
+    if (loadError && status) footerData.append(status);
     footerData.hidden = !loadError;
   }
 }
@@ -4320,28 +3517,14 @@ function render(options = {}) {
   installSafeIconHelper();
   document.documentElement.lang = language;
 
-  document.querySelector(
-    "#lists-label"
-  ).textContent = t().lists;
-
-  document.querySelector(
-    "#new-list-name"
-  ).placeholder = t().newList;
-
-  document.querySelector(
-    "#create-list-button"
-  ).setAttribute(
-    "aria-label",
-    t().addList
-  );
+  document.querySelector("#lists-label").textContent = t().lists;
+  document.querySelector("#new-list-name").placeholder = t().newList;
+  document.querySelector("#create-list-button").setAttribute("aria-label", t().addList);
 
   for (const code of ["de", "en"]) {
-    document.querySelector(
-      `#language-${code}`
-    ).setAttribute(
-      "aria-pressed",
-      String(language === code)
-    );
+    document
+      .querySelector(`#language-${code}`)
+      .setAttribute("aria-pressed", String(language === code));
   }
 
   renderNavigation();
@@ -4349,39 +3532,43 @@ function render(options = {}) {
   renderFooter();
   updateThemeToggle();
 
-  if (activeToast) {
-    renderToast(false);
-  }
+  if (activeToast) renderToast(false);
 
   if (options.focusSearch) {
-    const nextSearch = document.querySelector(
-      "#workspace .search-input"
-    );
-    if (nextSearch && !nextSearch.disabled) {
-      nextSearch.focus();
-    }
+    const nextSearch = document.querySelector("#workspace .search-input");
+    if (nextSearch && !nextSearch.disabled) nextSearch.focus();
   }
 }
 
-document.querySelector(
-  "#create-list-form"
-).addEventListener("submit", event => {
+document.addEventListener("paste", event => {
+  if (!minecraft) return;
+
+  const active = document.activeElement;
+  const tag = active?.tagName?.toUpperCase();
+  if (
+    tag === "INPUT" ||
+    tag === "TEXTAREA" ||
+    tag === "SELECT" ||
+    active?.isContentEditable ||
+    document.querySelector("dialog[open]")
+  ) {
+    return;
+  }
+
+  const pastedText = event.clipboardData?.getData("text/plain");
+  if (pastedText && importRawMaterialText(pastedText, true)) {
+    event.preventDefault();
+  }
+});
+
+document.querySelector("#create-list-form").addEventListener("submit", event => {
   event.preventDefault();
 
-  const input = document.querySelector(
-    "#new-list-name"
-  );
-
+  const input = document.querySelector("#new-list-name");
   const name = input.value.trim();
-
   if (!name) return;
 
-  const list = {
-    id: newId(),
-    name,
-    items: []
-  };
-
+  const list = { id: newId(), name, items: [] };
   state.lists.push(list);
   activeListId = list.id;
 
@@ -4391,80 +3578,56 @@ document.querySelector(
 
   showToast({
     getMessage: () =>
-      language === "de"
-        ? `Liste „${name}“ erstellt`
-        : `List “${name}” created`,
+      language === "de" ? `Liste „${name}“ erstellt` : `List “${name}” created`,
     variant: "create",
     duration: 4200
   });
 });
 
 for (const code of ["de", "en"]) {
-  document.querySelector(
-    `#language-${code}`
-  ).addEventListener("click", () => {
+  document.querySelector(`#language-${code}`).addEventListener("click", () => {
     language = code;
-
     try {
-      localStorage.setItem(
-        LANGUAGE_KEY,
-        code
-      );
+      localStorage.setItem(LANGUAGE_KEY, code);
     } catch {
-      // Sprache bleibt bis zum Neuladen aktiv.
+      // Optional
     }
-
     render();
   });
 }
 
-if (themeToggle) {
-  themeToggle.addEventListener("click", () => {
-    const nextTheme =
-      document.documentElement.dataset.theme === "dark"
-        ? "light"
-        : "dark";
-
-    document.documentElement.dataset.theme =
-      nextTheme;
-
-    try {
-      localStorage.setItem(
-        THEME_KEY,
-        nextTheme
-      );
-    } catch {
-      // Farbschema bleibt bis zum Neuladen aktiv.
-    }
-
-    updateThemeToggle();
-  });
-}
+themeToggle?.addEventListener("click", () => {
+  const nextTheme =
+    document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = nextTheme;
+  try {
+    localStorage.setItem(THEME_KEY, nextTheme);
+  } catch {
+    // Optional
+  }
+  updateThemeToggle();
+});
 
 async function loadAppVersion() {
   try {
-    const response = await fetch("./sw.js", {
-      cache: "no-cache"
-    });
-
+    const response = await fetch("./sw.js", { cache: "no-cache" });
     if (!response.ok) return;
 
-    const swCode = await response.text();
-    const match = swCode.match(
+    const match = (await response.text()).match(
       /CACHE_NAME\s*=\s*['"][^'"]*?(?:[-_]|v)(\d+(?:\.\d+)*)['"]/i
     );
 
-    if (match && match[1]) {
+    if (match?.[1]) {
       appVersion = match[1];
       try {
         localStorage.setItem(VERSION_KEY, appVersion);
       } catch {
-        // Speichern optional.
+        // Optional
       }
       renderFooter();
     }
   } catch {
-    // Offline-Fallback bleibt aktiv.
+    // Offline-Fallback behalten
   }
 }
 
@@ -4480,7 +3643,6 @@ async function loadData() {
     }
 
     const data = await dataResponse.json();
-
     if (
       !Array.isArray(data.catalog) ||
       !data.recipes ||
@@ -4506,12 +3668,11 @@ async function loadData() {
           ? defaultSourcesResponse
           : await fetch(`./data/sources/${encodeURIComponent(data.version)}.json`);
 
-      if (!sourcesResponse || !sourcesResponse.ok) {
+      if (!sourcesResponse?.ok) {
         throw new Error(`HTTP ${sourcesResponse?.status || "offline"}`);
       }
 
       const sourceData = await sourcesResponse.json();
-
       if (
         sourceData.version !== data.version ||
         !sourceData.entries ||
@@ -4537,3 +3698,4 @@ installSafeIconHelper();
 render();
 loadAppVersion();
 loadData();
+window.renderCraftLog = render;

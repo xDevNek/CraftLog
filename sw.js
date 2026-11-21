@@ -1,15 +1,21 @@
-const CACHE_NAME = "craftlog-v0.0.36";
+const CACHE_NAME = "craftlog-v0.0.37";
 const ICON_CACHE = "craftlog-icons-v1";
 
 const CORE_ASSETS = [
   "./",
   "./index.html",
   "./style.css",
+  "./theme-init.js",
+  "./recipe-helpers.js",
+  "./list-summary.js",
   "./app.js",
-  "./list-summary.js"
+  "./qol-features.js",
+  "./manifest.json",
+  "./assets/icon.svg",
+  "./assets/icon-192.png"
 ];
 
-// Installation: Kern-Dateien einzeln vorab laden (einzelne 404s brechen den Install nicht ab)
+// Installation: Alle Kern-Dateien vorab laden (einzelne 404s brechen den Install nicht ab)
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache =>
@@ -30,18 +36,20 @@ self.addEventListener("install", event => {
 // Aktivierung: Alte App-Caches aufräumen, den Icon-Cache aber behalten
 self.addEventListener("activate", event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys
-          .filter(key => key !== CACHE_NAME && key !== ICON_CACHE)
-          .map(key => caches.delete(key))
-      )
-    )
+    Promise.all([
+      caches.keys().then(keys =>
+        Promise.all(
+          keys
+            .filter(key => key !== CACHE_NAME && key !== ICON_CACHE)
+            .map(key => caches.delete(key))
+        )
+      ),
+      self.clients.claim()
+    ])
   );
-  self.clients.claim();
 });
 
-// Strategie 1: Cache-First für Icons (maximale Geschwindigkeit & Offline-Verfügbarkeit)
+// Strategie 1: Cache-First für Minecraft-Icons
 async function cacheFirstIcon(request) {
   const cache = await caches.open(ICON_CACHE);
   const cached = await cache.match(request);
@@ -76,7 +84,6 @@ async function networkFirstApp(request) {
       return cached;
     }
 
-    // Fallback bei Seitenaufrufen offline auf index.html
     if (request.mode === "navigate") {
       const fallback = await cache.match("./index.html");
       if (fallback) {
@@ -90,24 +97,15 @@ async function networkFirstApp(request) {
 
 self.addEventListener("fetch", event => {
   const { request } = event;
-
-  if (request.method !== "GET") {
-    return;
-  }
+  if (request.method !== "GET") return;
 
   const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
 
-  // Nur eigene Dateien behandeln
-  if (url.origin !== self.location.origin) {
-    return;
-  }
-
-  // Icons dauerhaft aus dem Icon-Cache bedienen
   if (url.pathname.includes("/assets/icons/")) {
     event.respondWith(cacheFirstIcon(request));
     return;
   }
 
-  // Alle App-Dateien (HTML, JS, CSS, JSON, Manifest) über Network-First
   event.respondWith(networkFirstApp(request));
 });

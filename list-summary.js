@@ -12,39 +12,50 @@ window.createListSummary = function createListSummary(
   const fuels = H.fuels;
 
   const CATEGORY_META = {
-    location: {
-      icon: "⛏️",
-      de: "Fundort",
-      en: "Location"
-    },
-    farm: {
-      icon: "🌾",
-      de: "Farm",
-      en: "Farm"
-    },
-    trade: {
-      icon: "🤝",
-      de: "Handel",
-      en: "Trading"
-    },
-    loot: {
-      icon: "💎",
-      de: "Loot",
-      en: "Loot"
-    },
-    craft: {
-      icon: "🔨",
-      de: "Herstellung",
-      en: "Crafting"
-    }
+    location: { icon: "⛏️", de: "Fundort", en: "Location" },
+    farm: { icon: "🌾", de: "Farm", en: "Farm" },
+    trade: { icon: "🤝", de: "Handel", en: "Trading" },
+    loot: { icon: "💎", de: "Loot", en: "Loot" },
+    craft: { icon: "🔨", de: "Herstellung", en: "Crafting" }
   };
 
   const isBlockById = new Map(
-    (minecraft.catalog || []).map(entry => [
-      entry.id,
-      Boolean(entry.isBlock)
-    ])
+    (minecraft.catalog || []).map(entry => [entry.id, Boolean(entry.isBlock)])
   );
+
+  function getMaxStackSize(fullId) {
+    const short = String(fullId || "").replace(/^minecraft:/, "");
+
+    if (
+      /^(snowball|egg|ender_pearl|bucket|water_bucket|lava_bucket|milk_bucket|powder_snow_bucket|axolotl_bucket|cod_bucket|pufferfish_bucket|salmon_bucket|tadpole_bucket|tropical_fish_bucket|honey_bottle|armor_stand|writable_book|written_book)$/.test(short) ||
+      short.endsWith("_sign") ||
+      short.endsWith("_hanging_sign") ||
+      short.endsWith("_banner")
+    ) {
+      return 16;
+    }
+
+    if (
+      /_(sword|pickaxe|axe|shovel|hoe|helmet|chestplate|leggings|boots|boat|chest_boat|raft|chest_raft|minecart|horse_armor|music_disc|shulker_box|bed|bucket)$/.test(short) ||
+      /^(bow|crossbow|trident|shield|fishing_rod|flint_and_steel|shears|elytra|totem_of_undying|saddle|spyglass|brush|mace|potion|splash_potion|lingering_potion|enchanted_book|cake|wolf_armor|goat_horn|bundle)$/.test(short)
+    ) {
+      return 1;
+    }
+
+    return 64;
+  }
+
+  function createIconSpan(id, extraClass = "") {
+    const isBlock = isBlockById.get(id);
+    const icon = node(
+      "span",
+      `tc-item-icon${isBlock === false ? " is-item" : ""}${extraClass ? ` ${extraClass}` : ""}`
+    );
+    icon.style.setProperty("--swatch-color", H.colorForItem(id));
+    icon.setAttribute("aria-hidden", "true");
+    H.applyItemIcon?.(icon, id);
+    return icon;
+  }
 
   const activeCyclingSlots = new Set();
   let sharedCycleTimer = null;
@@ -75,20 +86,14 @@ window.createListSummary = function createListSummary(
 
     const validIds = optionIds.length > 0 ? optionIds : ["minecraft:air"];
     const isCycling = !lockedId && validIds.length > 1;
-    let index = 0;
-
-    if (lockedId && validIds.includes(lockedId)) {
-      index = validIds.indexOf(lockedId);
-    }
+    let index = lockedId && validIds.includes(lockedId) ? validIds.indexOf(lockedId) : 0;
 
     const slotMain = document.createElement("div");
     slotMain.className =
       `crafting-slot-box${isCycling ? " is-cycling" : ""}${lockedId ? " is-locked" : ""}`;
 
     if (isCycling) {
-      slotMain.title = de
-        ? "Klicken für nächste Variante"
-        : "Click for next variant";
+      slotMain.title = de ? "Klicken für nächste Variante" : "Click for next variant";
       slotMain.setAttribute("role", "button");
       slotMain.tabIndex = 0;
     }
@@ -108,37 +113,28 @@ window.createListSummary = function createListSummary(
     itemName.className = "crafting-slot-name";
     info.append(itemName);
 
-    let counter = null;
-    if (validIds.length > 1) {
-      counter = document.createElement("span");
-      counter.className = "crafting-slot-counter";
-      info.append(counter);
-    }
+    const counter = validIds.length > 1 ? node("span", "crafting-slot-counter") : null;
+    if (counter) info.append(counter);
 
     slotMain.append(frame, info);
     container.append(slotMain);
 
     function showIndex(nextIndex, animate = false) {
       const currentId = H.fullId(validIds[nextIndex] || validIds[0]);
-      const isBlock = isBlockById.get(currentId);
       const label = nameOf(currentId);
 
       blockIcon.style.setProperty("--slot-color", H.colorForItem(currentId));
-      blockIcon.classList.toggle("is-item", isBlock === false);
+      blockIcon.classList.toggle("is-item", isBlockById.get(currentId) === false);
       H.applyItemIcon?.(blockIcon, currentId);
       itemName.textContent = label;
       itemName.title = label;
 
-      if (counter) {
-        counter.textContent = `${nextIndex + 1} / ${validIds.length}`;
-      }
+      if (counter) counter.textContent = `${nextIndex + 1} / ${validIds.length}`;
 
       if (animate) {
         slotMain.classList.remove("is-swapping");
         requestAnimationFrame(() => {
-          if (slotMain.isConnected) {
-            slotMain.classList.add("is-swapping");
-          }
+          if (slotMain.isConnected) slotMain.classList.add("is-swapping");
         });
       }
     }
@@ -147,7 +143,6 @@ window.createListSummary = function createListSummary(
 
     if (isCycling) {
       let paused = false;
-
       const advance = () => {
         index = (index + 1) % validIds.length;
         showIndex(index, true);
@@ -163,19 +158,10 @@ window.createListSummary = function createListSummary(
           advance();
         }
       });
-
-      slotMain.addEventListener("mouseenter", () => {
-        paused = true;
-      });
-      slotMain.addEventListener("mouseleave", () => {
-        paused = false;
-      });
-      slotMain.addEventListener("focusin", () => {
-        paused = true;
-      });
-      slotMain.addEventListener("focusout", () => {
-        paused = false;
-      });
+      slotMain.addEventListener("mouseenter", () => { paused = true; });
+      slotMain.addEventListener("mouseleave", () => { paused = false; });
+      slotMain.addEventListener("focusin", () => { paused = true; });
+      slotMain.addEventListener("focusout", () => { paused = false; });
 
       const prefersReducedMotion =
         typeof window.matchMedia === "function" &&
@@ -183,8 +169,7 @@ window.createListSummary = function createListSummary(
 
       if (!prefersReducedMotion) {
         slotMain._cycleTick = () => {
-          if (paused) return;
-          advance();
+          if (!paused) advance();
         };
         registerCyclingSlot(slotMain);
       }
@@ -193,32 +178,14 @@ window.createListSummary = function createListSummary(
     return container;
   }
 
-  if (!list.summaryChoices || typeof list.summaryChoices !== "object") {
-    list.summaryChoices = {};
-  }
-
-  if (!list.summaryInventory || typeof list.summaryInventory !== "object") {
-    list.summaryInventory = {};
-  }
-
-  if (!fuels.some(fuel => fuel.id === list.summaryFuel)) {
-    list.summaryFuel = "minecraft:coal";
-  }
-
-  if (!["items", "stacks", "shulkers"].includes(list.summaryUnitMode)) {
-    list.summaryUnitMode = "items";
-  }
-
-  if (typeof list.summaryOpen !== "boolean") {
-    list.summaryOpen = true;
-  }
-
+  if (!list.summaryChoices || typeof list.summaryChoices !== "object") list.summaryChoices = {};
+  if (!list.summaryInventory || typeof list.summaryInventory !== "object") list.summaryInventory = {};
+  if (!fuels.some(fuel => fuel.id === list.summaryFuel)) list.summaryFuel = "minecraft:coal";
+  if (!["items", "stacks", "shulkers"].includes(list.summaryUnitMode)) list.summaryUnitMode = "items";
+  if (typeof list.summaryOpen !== "boolean") list.summaryOpen = true;
+  if (typeof list.summaryFarmMode !== "boolean") list.summaryFarmMode = false;
   if (!list.summarySections || typeof list.summarySections !== "object") {
-    list.summarySections = {
-      gather: true,
-      precrafts: true,
-      goals: true
-    };
+    list.summarySections = { gather: true, precrafts: true, goals: true };
   }
 
   const choices = list.summaryChoices;
@@ -231,7 +198,6 @@ window.createListSummary = function createListSummary(
   const panel = document.createElement("details");
   panel.className = "list-summary";
   panel.open = list.summaryOpen;
-
   panel.addEventListener("toggle", () => {
     list.summaryOpen = panel.open;
     save();
@@ -244,19 +210,12 @@ window.createListSummary = function createListSummary(
 
   const body = document.createElement("div");
   body.className = "list-summary-body";
-
   panel.append(summary, body);
 
   function node(tag, className, text) {
     const result = document.createElement(tag);
-    if (className) {
-      result.className = className;
-    }
-
-    if (text !== undefined) {
-      result.textContent = text;
-    }
-
+    if (className) result.className = className;
+    if (text !== undefined) result.textContent = text;
     return result;
   }
 
@@ -271,25 +230,20 @@ window.createListSummary = function createListSummary(
 
   function setHave(id, value) {
     const clean = Math.max(0, Math.floor(Number(value) || 0));
-    if (clean === 0) {
-      delete inventory[id];
-    } else {
-      inventory[id] = clean;
-    }
+    if (clean === 0) delete inventory[id];
+    else inventory[id] = clean;
   }
 
   function getGatherCategory(id, isFuelItem) {
-    if (isFuelItem) {
-      return "fuel";
-    }
+    if (isFuelItem) return "fuel";
+    const firstWay = window.materialSources?.[id]?.ways?.[0];
+    return firstWay && sourceCategoryLabels[firstWay.type] ? firstWay.type : "other";
+  }
 
-    const source = window.materialSources?.[id];
-    const firstWay = Array.isArray(source?.ways) ? source.ways[0] : null;
-    if (firstWay && sourceCategoryLabels[firstWay.type]) {
-      return firstWay.type;
-    }
-
-    return "other";
+  function formatSurplus(step) {
+    return step.produced > step.remaining && step.remaining > 0
+      ? (de ? `+${step.produced - step.remaining} Überschuss` : `+${step.produced - step.remaining} extra`)
+      : "";
   }
 
   function openSourceDialog({
@@ -301,16 +255,12 @@ window.createListSummary = function createListSummary(
     initialFilter = "all",
     quantityLabel = null
   }) {
-    const existingDialog = document.getElementById("tc-source-dialog");
-    if (existingDialog) {
-      existingDialog.remove();
-    }
+    document.getElementById("tc-source-dialog")?.remove();
 
     const normalizedId = H.fullId(id);
     const source = window.materialSources?.[normalizedId];
     const ways = Array.isArray(source?.ways) ? source.ways : [];
     const recipes = H.getEffectiveRecipes(normalizedId, minecraft);
-    const isBlock = isBlockById.get(normalizedId);
     const itemName = nameOf(normalizedId);
 
     const dialog = document.createElement("dialog");
@@ -318,18 +268,8 @@ window.createListSummary = function createListSummary(
     dialog.className = "tc-source-dialog";
 
     const inner = node("div", "tc-dialog-inner");
-
-    // Kopfbereich
     const header = node("div", "tc-dialog-header");
     const titleGroup = node("div", "tc-dialog-title-group");
-
-    const icon = node(
-      "span",
-      `tc-item-icon${isBlock === false ? " is-item" : ""}`
-    );
-    icon.style.setProperty("--swatch-color", H.colorForItem(normalizedId));
-    icon.setAttribute("aria-hidden", "true");
-    H.applyItemIcon?.(icon, normalizedId);
 
     const titleText = node("div", "tc-dialog-title-text");
     titleText.append(node("h3", "tc-dialog-title", itemName));
@@ -345,7 +285,7 @@ window.createListSummary = function createListSummary(
       );
     }
 
-    titleGroup.append(icon, titleText);
+    titleGroup.append(createIconSpan(normalizedId), titleText);
 
     const closeBtn = document.createElement("button");
     closeBtn.type = "button";
@@ -357,7 +297,6 @@ window.createListSummary = function createListSummary(
     header.append(titleGroup, closeBtn);
     inner.append(header);
 
-    // Filter-Tabs oben
     const canonicalOrder = ["location", "farm", "trade", "loot", "craft"];
     const countsByType = new Map();
     for (const way of ways) {
@@ -371,14 +310,11 @@ window.createListSummary = function createListSummary(
     ];
 
     let activeFilter =
-      initialFilter !== "all" && countsByType.has(initialFilter)
-        ? initialFilter
-        : "all";
+      initialFilter !== "all" && countsByType.has(initialFilter) ? initialFilter : "all";
     let searchQuery = "";
 
-    let tabsBar = null;
-    if (ways.length > 0) {
-      tabsBar = node("div", "tc-dialog-tabs");
+    const tabsBar = ways.length > 0 ? node("div", "tc-dialog-tabs") : null;
+    if (tabsBar) {
       tabsBar.setAttribute("role", "tablist");
       tabsBar.setAttribute(
         "aria-label",
@@ -387,12 +323,9 @@ window.createListSummary = function createListSummary(
       inner.append(tabsBar);
     }
 
-    // Suchleiste bei vielen Einträgen (ab 6 Wegen)
-    let searchClearBtn = null;
-    let searchInput = null;
     if (ways.length >= 6) {
       const searchWrap = node("div", "tc-dialog-search");
-      searchInput = document.createElement("input");
+      const searchInput = document.createElement("input");
       searchInput.type = "search";
       searchInput.className = "tc-dialog-search-input";
       searchInput.placeholder = de
@@ -401,7 +334,7 @@ window.createListSummary = function createListSummary(
       searchInput.setAttribute("aria-label", searchInput.placeholder);
       searchInput.autocomplete = "off";
 
-      searchClearBtn = document.createElement("button");
+      const searchClearBtn = document.createElement("button");
       searchClearBtn.type = "button";
       searchClearBtn.className = "tc-dialog-search-clear";
       searchClearBtn.textContent = "×";
@@ -427,7 +360,6 @@ window.createListSummary = function createListSummary(
       inner.append(searchWrap);
     }
 
-    // Scrollbarer Inhalt
     const dialogBody = node("div", "tc-dialog-body");
 
     if (isFuelItem && fuelNeeded > 0 && chosenFuel) {
@@ -448,14 +380,8 @@ window.createListSummary = function createListSummary(
     function renderDialogContent() {
       if (tabsBar) {
         tabsBar.replaceChildren();
-
         const tabItems = [
-          {
-            key: "all",
-            icon: "",
-            label: de ? "Alle" : "All",
-            count: ways.length
-          },
+          { key: "all", icon: "", label: de ? "Alle" : "All", count: ways.length },
           ...presentTypes.map(type => {
             const meta = CATEGORY_META[type];
             return {
@@ -475,16 +401,17 @@ window.createListSummary = function createListSummary(
           tabBtn.className = `tc-dialog-tab${isSelected ? " is-active" : ""}`;
           tabBtn.setAttribute("aria-selected", String(isSelected));
 
-          if (tab.icon) {
-            tabBtn.append(node("span", "tc-dialog-tab-icon", tab.icon));
-          }
-          tabBtn.append(node("span", "", tab.label));
-          tabBtn.append(node("span", "tc-dialog-tab-count", String(tab.count)));
+          if (tab.icon) tabBtn.append(node("span", "tc-dialog-tab-icon", tab.icon));
+          tabBtn.append(
+            node("span", "", tab.label),
+            node("span", "tc-dialog-tab-count", String(tab.count))
+          );
 
           tabBtn.addEventListener("click", () => {
-            if (activeFilter === tab.key) return;
-            activeFilter = tab.key;
-            renderDialogContent();
+            if (activeFilter !== tab.key) {
+              activeFilter = tab.key;
+              renderDialogContent();
+            }
           });
 
           tabsBar.append(tabBtn);
@@ -494,13 +421,9 @@ window.createListSummary = function createListSummary(
       waysContainer.replaceChildren();
 
       const filteredWays = ways.filter(way => {
-        const typeMatches =
-          activeFilter === "all" || (way.type || "other") === activeFilter;
-        if (!typeMatches) return false;
+        if (activeFilter !== "all" && (way.type || "other") !== activeFilter) return false;
         if (!searchQuery) return true;
-
-        const text = String(way[language] || way.en || "").toLowerCase();
-        return text.includes(searchQuery);
+        return String(way[language] || way.en || "").toLowerCase().includes(searchQuery);
       });
 
       if (filteredWays.length === 0) {
@@ -523,17 +446,10 @@ window.createListSummary = function createListSummary(
         const badgeText = meta?.icon ? `${meta.icon} ${typeLabel}` : typeLabel;
 
         const wayCard = node("div", "tc-dialog-way");
-        const badge = node(
-          "span",
-          `tc-dialog-way-badge tc-dialog-way-badge--${type}`,
-          badgeText
+        wayCard.append(
+          node("span", `tc-dialog-way-badge tc-dialog-way-badge--${type}`, badgeText),
+          node("p", "tc-dialog-way-text", way[language] || way.en || "")
         );
-        const text = node(
-          "p",
-          "tc-dialog-way-text",
-          way[language] || way.en || ""
-        );
-        wayCard.append(badge, text);
         waysContainer.append(wayCard);
       }
     }
@@ -543,9 +459,7 @@ window.createListSummary = function createListSummary(
       dialogBody.append(waysContainer);
     } else if (recipes.length > 0) {
       const stations = [
-        ...new Set(
-          recipes.map(recipe => recipeTypeNames[recipe.type] || recipe.type)
-        )
+        ...new Set(recipes.map(recipe => recipeTypeNames[recipe.type] || recipe.type))
       ].join(", ");
 
       dialogBody.append(
@@ -573,56 +487,36 @@ window.createListSummary = function createListSummary(
     dialog.append(inner);
 
     const closeDialog = () => {
-      if (dialog.open) {
-        dialog.close();
-      }
+      if (dialog.open) dialog.close();
       dialog.remove();
     };
 
     closeBtn.addEventListener("click", closeDialog);
     dialog.addEventListener("click", event => {
-      if (event.target === dialog) {
-        closeDialog();
-      }
+      if (event.target === dialog) closeDialog();
     });
-    dialog.addEventListener("close", () => {
-      dialog.remove();
-    });
+    dialog.addEventListener("close", () => dialog.remove());
 
     document.body.append(dialog);
-    if (typeof dialog.showModal === "function") {
-      dialog.showModal();
-    } else {
-      dialog.setAttribute("open", "");
-    }
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else dialog.setAttribute("open", "");
   }
 
   window.openMaterialSourceDialog = openSourceDialog;
 
-  function selectChoice(
-    labelText,
-    values,
-    selected,
-    onChange,
-    optionIds = []
-  ) {
+  function selectChoice(labelText, values, selected, onChange, optionIds = []) {
     const label = node("label", "list-summary-choice", labelText);
     const controlRow = node("div", "list-summary-choice-row");
 
     if (optionIds.length > 1) {
-      const locked =
-        selected && optionIds.includes(selected) ? selected : "";
+      const locked = selected && optionIds.includes(selected) ? selected : "";
       controlRow.append(createCyclingSlot(optionIds, locked));
     }
 
     const select = node("select", "list-summary-select");
-
     const placeholder = document.createElement("option");
     placeholder.value = "";
-    placeholder.textContent = de
-      ? "Bitte auswählen"
-      : "Please choose";
-
+    placeholder.textContent = de ? "Bitte auswählen" : "Please choose";
     select.append(placeholder);
 
     for (const value of values) {
@@ -656,6 +550,170 @@ window.createListSummary = function createListSummary(
     return label;
   }
 
+  function createStoragePlannerBar(rawMaterialsMap) {
+    let totalSlots = 0;
+    let openSlots = 0;
+    let openItemCount = 0;
+
+    for (const [id, totalNeeded] of rawMaterialsMap.entries()) {
+      const maxStack = getMaxStackSize(id);
+      const remaining = Math.max(0, totalNeeded - getHave(id));
+
+      totalSlots += Math.ceil(totalNeeded / maxStack);
+      openSlots += Math.ceil(remaining / maxStack);
+      openItemCount += remaining;
+    }
+
+    const shulkersOpen = Math.ceil(openSlots / 27);
+    const doubleChestsOpen = Math.ceil(openSlots / 54);
+
+    const bar = node("div", "tc-pack-planner");
+
+    const titleWrap = node("div", "tc-pack-planner-title");
+    titleWrap.append(
+      createIconSpan("minecraft:chest", "tc-pack-planner-chest"),
+      node("strong", "", de ? "Lager-Planer" : "Storage Planner")
+    );
+
+    const stats = node("div", "tc-pack-planner-stats");
+    stats.append(
+      node(
+        "span",
+        "tc-pack-chip",
+        de
+          ? `${shulkersOpen} ${shulkersOpen === 1 ? "Shulker-Box" : "Shulker-Boxen"} (27 Slots)`
+          : `${shulkersOpen} ${shulkersOpen === 1 ? "Shulker Box" : "Shulker Boxes"} (27 slots)`
+      ),
+      node(
+        "span",
+        "tc-pack-chip",
+        de
+          ? `${doubleChestsOpen} ${doubleChestsOpen === 1 ? "Doppelkiste" : "Doppelkisten"}`
+          : `${doubleChestsOpen} ${doubleChestsOpen === 1 ? "Double Chest" : "Double Chests"}`
+      ),
+      node(
+        "span",
+        "tc-pack-chip tc-pack-chip--muted",
+        de
+          ? `${openSlots} / ${totalSlots} Slots offen (${openItemCount.toLocaleString("de-DE")} Stück)`
+          : `${openSlots} / ${totalSlots} slots left (${openItemCount.toLocaleString("en-US")} items)`
+      )
+    );
+
+    bar.append(titleWrap, stats);
+    return bar;
+  }
+
+  function createFarmChecklistView(rawEntries, fuelNeeded, chosenFuel) {
+    const wrap = node("div", "tc-farm-view");
+    const openEntries = rawEntries.filter(
+      entry => Math.max(0, entry.totalNeeded - getHave(entry.id)) > 0
+    );
+
+    const intro = node("div", "tc-farm-intro");
+    intro.append(
+      node(
+        "span",
+        "",
+        openEntries.length > 0
+          ? (
+            de
+              ? `Noch ${openEntries.length} offene Rohstoffe sammeln – antippen zum Abhaken:`
+              : `${openEntries.length} raw materials left to gather – tap to check off:`
+          )
+          : (
+            de
+              ? "Alle benötigten Rohstoffe sind komplett gesammelt!"
+              : "All required raw materials have been gathered!"
+          )
+      )
+    );
+    wrap.append(intro);
+
+    if (openEntries.length === 0) return wrap;
+
+    const categoryOrder = ["location", "farm", "trade", "loot", "other", "fuel"];
+    const grouped = new Map(categoryOrder.map(cat => [cat, []]));
+    for (const entry of openEntries) {
+      (grouped.get(entry.category) || grouped.get("other")).push(entry);
+    }
+
+    for (const cat of categoryOrder) {
+      const bucket = grouped.get(cat);
+      if (!bucket?.length) continue;
+
+      wrap.append(node("div", "tc-group-header", sourceCategoryLabels[cat]));
+      const grid = node("div", "tc-farm-grid");
+
+      for (const entry of bucket) {
+        const have = getHave(entry.id);
+        const remaining = Math.max(0, entry.totalNeeded - have);
+        const itemName = nameOf(entry.id);
+
+        const card = node("div", "tc-farm-card");
+
+        const checkArea = document.createElement("button");
+        checkArea.type = "button";
+        checkArea.className = "tc-farm-card-main";
+        checkArea.title = de
+          ? `${itemName} als gesammelt abhaken`
+          : `Mark ${itemName} as gathered`;
+
+        const textCol = node("div", "tc-farm-card-text");
+        textCol.append(
+          node("span", "tc-farm-card-name", itemName),
+          node(
+            "span",
+            "tc-farm-card-qty",
+            have > 0
+              ? (
+                de
+                  ? `Noch ${H.formatQuantity(remaining, list.summaryUnitMode)} × (${have}/${entry.totalNeeded})`
+                  : `${H.formatQuantity(remaining, list.summaryUnitMode)} × left (${have}/${entry.totalNeeded})`
+              )
+              : `${H.formatQuantity(remaining, list.summaryUnitMode)} ×`
+          )
+        );
+
+        checkArea.append(
+          node("span", "tc-farm-card-check", "✓"),
+          createIconSpan(entry.id),
+          textCol
+        );
+
+        checkArea.addEventListener("click", () => {
+          setHave(entry.id, entry.totalNeeded);
+          notifyCompletionOnDraw = true;
+          save();
+          draw();
+        });
+
+        const sourceBtn = document.createElement("button");
+        sourceBtn.type = "button";
+        sourceBtn.className = "tc-farm-card-source";
+        sourceBtn.textContent = "ⓘ";
+        sourceBtn.title = de ? `Fundort für ${itemName}` : `Location for ${itemName}`;
+        sourceBtn.setAttribute("aria-label", sourceBtn.title);
+        sourceBtn.addEventListener("click", () => {
+          openSourceDialog({
+            id: entry.id,
+            totalNeeded: entry.totalNeeded,
+            isFuelItem: entry.isFuelItem,
+            fuelNeeded,
+            chosenFuel
+          });
+        });
+
+        card.append(checkArea, sourceBtn);
+        grid.append(card);
+      }
+
+      wrap.append(grid);
+    }
+
+    return wrap;
+  }
+
   function createTeamcraftRow({
     id,
     totalNeeded,
@@ -670,56 +728,35 @@ window.createListSummary = function createListSummary(
     const have = getHave(id);
     const remaining = Math.max(0, totalNeeded - have);
     const isDone = totalNeeded > 0 && remaining === 0;
-    const isBlock = isBlockById.get(id);
     const itemName = nameOf(id);
 
     const row = node("div", `tc-row${isDone ? " is-done" : ""}`);
-
     const left = node("div", "tc-row-left");
-
-    const icon = node(
-      "span",
-      `tc-item-icon${isBlock === false ? " is-item" : ""}`
-    );
-    icon.style.setProperty("--swatch-color", H.colorForItem(id));
-    icon.setAttribute("aria-hidden", "true");
-    H.applyItemIcon?.(icon, id);
 
     const labelGroup = node("div", "tc-item-label-group");
     labelGroup.append(
       node("span", "tc-item-name", itemName),
       node("span", "tc-item-qty", `×${H.formatQuantity(totalNeeded, unitMode)}`)
     );
-
-    if (extraMeta) {
-      labelGroup.append(node("span", "tc-item-sub", `(${extraMeta})`));
-    }
+    if (extraMeta) labelGroup.append(node("span", "tc-item-sub", `(${extraMeta})`));
 
     const copyBtn = document.createElement("button");
     copyBtn.type = "button";
     copyBtn.className = "tc-copy-btn";
     copyBtn.textContent = "⧉";
-    copyBtn.title = de
-      ? `„${itemName}“ kopieren`
-      : `Copy “${itemName}”`;
+    copyBtn.title = de ? `„${itemName}“ kopieren` : `Copy “${itemName}”`;
     copyBtn.setAttribute("aria-label", copyBtn.title);
-
     copyBtn.addEventListener("click", () => {
-      if (navigator.clipboard?.writeText) {
-        navigator.clipboard.writeText(itemName).catch(() => {});
-      }
+      navigator.clipboard?.writeText?.(itemName).catch(() => {});
       copyBtn.textContent = "✓";
       setTimeout(() => {
-        if (copyBtn.isConnected) {
-          copyBtn.textContent = "⧉";
-        }
+        if (copyBtn.isConnected) copyBtn.textContent = "⧉";
       }, 900);
     });
 
-    left.append(icon, labelGroup, copyBtn);
+    left.append(createIconSpan(id), labelGroup, copyBtn);
 
     const right = node("div", "tc-row-right");
-
     const counterGroup = node("div", "tc-counter-group");
 
     const haveInput = document.createElement("input");
@@ -731,14 +768,11 @@ window.createListSummary = function createListSummary(
     haveInput.dataset.invId = id;
     haveInput.setAttribute(
       "aria-label",
-      de
-        ? `Vorhandene Menge für ${itemName}`
-        : `Owned quantity for ${itemName}`
+      de ? `Vorhandene Menge für ${itemName}` : `Owned quantity for ${itemName}`
     );
 
     const commitHave = () => {
-      const parsed = Math.max(0, Math.floor(Number(haveInput.value) || 0));
-      setHave(id, parsed);
+      setHave(id, Math.max(0, Math.floor(Number(haveInput.value) || 0)));
       notifyCompletionOnDraw = true;
       save();
       draw();
@@ -752,8 +786,6 @@ window.createListSummary = function createListSummary(
       }
     });
 
-    const totalCell = node("span", "tc-total-cell", `/${totalNeeded}`);
-
     const checkBtn = document.createElement("button");
     checkBtn.type = "button";
     checkBtn.className = `tc-check-btn${isDone ? " is-checked" : ""}`;
@@ -762,19 +794,14 @@ window.createListSummary = function createListSummary(
       ? (de ? "Als offen markieren" : "Mark as incomplete")
       : (de ? "Als erledigt markieren" : "Mark as complete");
     checkBtn.setAttribute("aria-label", checkBtn.title);
-
     checkBtn.addEventListener("click", () => {
-      if (isDone) {
-        setHave(id, 0);
-      } else {
-        setHave(id, totalNeeded);
-      }
+      setHave(id, isDone ? 0 : totalNeeded);
       notifyCompletionOnDraw = true;
       save();
       draw();
     });
 
-    counterGroup.append(haveInput, totalCell, checkBtn);
+    counterGroup.append(haveInput, node("span", "tc-total-cell", `/${totalNeeded}`), checkBtn);
     right.append(counterGroup);
 
     if (stationName) {
@@ -791,18 +818,9 @@ window.createListSummary = function createListSummary(
       pill.className =
         `tc-station-pill${isGather ? " is-gather" : ""}${isClickable ? " is-clickable" : ""}${!hasSourceDetails ? " is-empty-source" : ""}`;
 
-      pill.append(
-        node("span", "tc-station-dot"),
-        node("span", "", stationName)
-      );
-
-      if (stationCount) {
-        pill.append(node("span", "tc-station-count", stationCount));
-      }
-
-      if (isClickable) {
-        pill.append(node("span", "tc-station-hint-icon", "ⓘ"));
-      }
+      pill.append(node("span", "tc-station-dot"), node("span", "", stationName));
+      if (stationCount) pill.append(node("span", "tc-station-count", stationCount));
+      if (isClickable) pill.append(node("span", "tc-station-hint-icon", "ⓘ"));
 
       right.append(pill);
     }
@@ -843,16 +861,12 @@ window.createListSummary = function createListSummary(
     resetSectionBtn.type = "button";
     resetSectionBtn.className = "tc-header-icon-btn";
     resetSectionBtn.textContent = "↻";
-    resetSectionBtn.title = de
-      ? "Abschnitt zurücksetzen"
-      : "Reset section";
+    resetSectionBtn.title = de ? "Abschnitt zurücksetzen" : "Reset section";
     resetSectionBtn.setAttribute("aria-label", resetSectionBtn.title);
     resetSectionBtn.addEventListener("click", event => {
       event.preventDefault();
       event.stopPropagation();
-      for (const entry of entries) {
-        setHave(entry.id, 0);
-      }
+      for (const entry of entries) setHave(entry.id, 0);
       save();
       draw();
     });
@@ -868,9 +882,7 @@ window.createListSummary = function createListSummary(
     completeSectionBtn.addEventListener("click", event => {
       event.preventDefault();
       event.stopPropagation();
-      for (const entry of entries) {
-        setHave(entry.id, entry.totalNeeded);
-      }
+      for (const entry of entries) setHave(entry.id, entry.totalNeeded);
       notifyCompletionOnDraw = true;
       save();
       draw();
@@ -888,15 +900,11 @@ window.createListSummary = function createListSummary(
       renderContent(sectionBody);
     };
 
-    if (details.open) {
-      ensureRendered();
-    }
+    if (details.open) ensureRendered();
 
     details.addEventListener("toggle", () => {
       list.summarySections[sectionKey] = details.open;
-      if (details.open) {
-        ensureRendered();
-      }
+      if (details.open) ensureRendered();
       save();
     });
 
@@ -905,8 +913,7 @@ window.createListSummary = function createListSummary(
   }
 
   function draw() {
-    const activeInvId =
-      document.activeElement?.dataset?.invId || null;
+    const activeInvId = document.activeElement?.dataset?.invId || null;
 
     missingChoicesCount = 0;
     activeCyclingSlots.clear();
@@ -917,18 +924,9 @@ window.createListSummary = function createListSummary(
 
     for (const item of list.items || []) {
       const quantity = Number(item.quantity);
-
-      if (!Number.isSafeInteger(quantity) || quantity < 1) {
-        continue;
-      }
-
+      if (!Number.isSafeInteger(quantity) || quantity < 1) continue;
       hasAnyValidItems = true;
-
-      if (item.done) {
-        continue;
-      }
-
-      add(goalQuantities, H.fullId(item.blockId), quantity);
+      if (!item.done) add(goalQuantities, H.fullId(item.blockId), quantity);
     }
 
     if (goalQuantities.size === 0) {
@@ -944,11 +942,7 @@ window.createListSummary = function createListSummary(
                 ? "Alle Materialien in dieser Liste sind bereits abgehakt – kein offener Bedarf mehr."
                 : "All materials in this list are already checked off – nothing left to gather or craft."
             )
-            : (
-              de
-                ? "Füge zuerst Materialien zur Liste hinzu."
-                : "Add materials to the list first."
-            )
+            : (de ? "Füge zuerst Materialien zur Liste hinzu." : "Add materials to the list first.")
         )
       );
       return;
@@ -960,40 +954,22 @@ window.createListSummary = function createListSummary(
 
     function buildGraph(id, ancestors = new Set()) {
       if (ancestors.has(id)) {
-        warnings.push(
-          de
-            ? `Rezeptschleife bei ${nameOf(id)}.`
-            : `Recipe cycle at ${nameOf(id)}.`
-        );
+        warnings.push(de ? `Rezeptschleife bei ${nameOf(id)}.` : `Recipe cycle at ${nameOf(id)}.`);
         return;
       }
 
       if (graph.has(id)) return;
 
-      const entry = {
-        id,
-        recipe: null,
-        ingredients: [],
-        unresolved: false
-      };
-
+      const entry = { id, recipe: null, ingredients: [], unresolved: false };
       graph.set(id, entry);
 
       const recipes = H.getEffectiveRecipes(id, minecraft);
-
-      if (recipes.length === 0) {
-        return;
-      }
+      if (recipes.length === 0) return;
 
       let recipeIndex = 0;
 
       if (recipes.length > 1) {
-        const distinctOptions = H.buildDistinctRecipeOptions(
-          recipes,
-          nameOf,
-          language
-        );
-
+        const distinctOptions = H.buildDistinctRecipeOptions(recipes, nameOf, language);
         if (distinctOptions.length === 1) {
           recipeIndex = Number(distinctOptions[0].value);
         } else {
@@ -1002,27 +978,17 @@ window.createListSummary = function createListSummary(
 
           choiceBox.append(
             selectChoice(
-              de
-                ? `Rezept für ${nameOf(id)}`
-                : `Recipe for ${nameOf(id)}`,
+              de ? `Rezept für ${nameOf(id)}` : `Recipe for ${nameOf(id)}`,
               distinctOptions,
               selected,
-              value => {
-                choices[key] = value;
-              }
+              value => { choices[key] = value; }
             )
           );
 
-          if (
-            selected === undefined ||
-            selected === "" ||
-            !recipes[Number(selected)]
-          ) {
+          if (selected === undefined || selected === "" || !recipes[Number(selected)]) {
             entry.unresolved = true;
             warnings.push(
-              de
-                ? `Rezept für ${nameOf(id)} auswählen.`
-                : `Choose a recipe for ${nameOf(id)}.`
+              de ? `Rezept für ${nameOf(id)} auswählen.` : `Choose a recipe for ${nameOf(id)}.`
             );
             return;
           }
@@ -1032,7 +998,6 @@ window.createListSummary = function createListSummary(
       }
 
       const recipe = recipes[recipeIndex];
-
       if (
         !recipe ||
         !Array.isArray(recipe.ingredients) ||
@@ -1052,29 +1017,18 @@ window.createListSummary = function createListSummary(
       entry.recipe = recipe;
 
       const ingredientGroups = new Map();
-
       for (const ingredient of recipe.ingredients) {
         const key = JSON.stringify(ingredient);
-
-        if (!ingredientGroups.has(key)) {
-          ingredientGroups.set(key, {
-            ingredient,
-            count: 0
-          });
-        }
-
+        if (!ingredientGroups.has(key)) ingredientGroups.set(key, { ingredient, count: 0 });
         ingredientGroups.get(key).count++;
       }
 
       for (const [key, group] of ingredientGroups) {
         const options = H.optionsFor(group.ingredient);
-
         if (options.length === 0) {
           entry.unresolved = true;
           warnings.push(
-            de
-              ? `Unbekannte Zutat für ${nameOf(id)}.`
-              : `Unknown ingredient for ${nameOf(id)}.`
+            de ? `Unbekannte Zutat für ${nameOf(id)}.` : `Unknown ingredient for ${nameOf(id)}.`
           );
           continue;
         }
@@ -1092,28 +1046,15 @@ window.createListSummary = function createListSummary(
           );
 
           const labelHeading = groupLabel
-            ? (
-              de
-                ? `Zutat für ${nameOf(id)} · ${groupLabel}`
-                : `Ingredient for ${nameOf(id)} · ${groupLabel}`
-            )
-            : (
-              de
-                ? `Zutat für ${nameOf(id)}`
-                : `Ingredient for ${nameOf(id)}`
-            );
+            ? (de ? `Zutat für ${nameOf(id)} · ${groupLabel}` : `Ingredient for ${nameOf(id)} · ${groupLabel}`)
+            : (de ? `Zutat für ${nameOf(id)}` : `Ingredient for ${nameOf(id)}`);
 
           choiceBox.append(
             selectChoice(
               labelHeading,
-              options.map(optionId => ({
-                value: optionId,
-                label: nameOf(optionId)
-              })),
+              options.map(optionId => ({ value: optionId, label: nameOf(optionId) })),
               selected,
-              value => {
-                choices[choiceKey] = value;
-              },
+              value => { choices[choiceKey] = value; },
               options
             )
           );
@@ -1131,45 +1072,28 @@ window.createListSummary = function createListSummary(
           ingredientId = selected;
         }
 
-        entry.ingredients.push({
-          id: ingredientId,
-          count: group.count
-        });
+        entry.ingredients.push({ id: ingredientId, count: group.count });
       }
 
       const nextAncestors = new Set(ancestors);
       nextAncestors.add(id);
-
       for (const ingredient of entry.ingredients) {
         buildGraph(ingredient.id, nextAncestors);
       }
     }
 
-    for (const id of goalQuantities.keys()) {
-      buildGraph(id);
-    }
+    for (const id of goalQuantities.keys()) buildGraph(id);
 
-    const indegree = new Map(
-      [...graph.keys()].map(id => [id, 0])
-    );
-
+    const indegree = new Map([...graph.keys()].map(id => [id, 0]));
     for (const entry of graph.values()) {
       for (const ingredient of entry.ingredients) {
-        indegree.set(
-          ingredient.id,
-          (indegree.get(ingredient.id) || 0) + 1
-        );
+        indegree.set(ingredient.id, (indegree.get(ingredient.id) || 0) + 1);
       }
     }
 
     const totalDemand = new Map(goalQuantities);
-    const depth = new Map(
-      [...goalQuantities.keys()].map(id => [id, 0])
-    );
-
-    const queue = [...graph.keys()].filter(
-      id => indegree.get(id) === 0
-    );
+    const depth = new Map([...goalQuantities.keys()].map(id => [id, 0]));
+    const queue = [...graph.keys()].filter(id => indegree.get(id) === 0);
 
     let topoVisitedCount = 0;
     const processed = [];
@@ -1186,44 +1110,27 @@ window.createListSummary = function createListSummary(
 
       const have = getHave(id);
       const remaining = Math.max(0, totalNeeded - have);
-
       let batches = 0;
       let produced = 0;
 
-      if (
-        !entry.recipe &&
-        !entry.unresolved &&
-        totalNeeded > 0
-      ) {
+      if (!entry.recipe && !entry.unresolved && totalNeeded > 0) {
         add(rawMaterials, id, totalNeeded);
       }
 
       if (entry.recipe && remaining > 0) {
         const outputCount = Number(entry.recipe.count);
-
         batches = Math.ceil(remaining / outputCount);
         produced = batches * outputCount;
 
-        if (
-          ["smelting", "blasting", "smoking"]
-            .includes(entry.recipe.type)
-        ) {
+        if (["smelting", "blasting", "smoking"].includes(entry.recipe.type)) {
           add(cooking, entry.recipe.type, batches);
         }
 
         for (const ingredient of entry.ingredients) {
-          add(
-            totalDemand,
-            ingredient.id,
-            ingredient.count * batches
-          );
-
+          add(totalDemand, ingredient.id, ingredient.count * batches);
           depth.set(
             ingredient.id,
-            Math.max(
-              depth.get(ingredient.id) || 0,
-              (depth.get(id) || 0) + 1
-            )
+            Math.max(depth.get(ingredient.id) || 0, (depth.get(id) || 0) + 1)
           );
         }
       }
@@ -1243,14 +1150,8 @@ window.createListSummary = function createListSummary(
       }
 
       for (const ingredient of entry.ingredients) {
-        indegree.set(
-          ingredient.id,
-          indegree.get(ingredient.id) - 1
-        );
-
-        if (indegree.get(ingredient.id) === 0) {
-          queue.push(ingredient.id);
-        }
+        indegree.set(ingredient.id, indegree.get(ingredient.id) - 1);
+        if (indegree.get(ingredient.id) === 0) queue.push(ingredient.id);
       }
     }
 
@@ -1262,8 +1163,7 @@ window.createListSummary = function createListSummary(
       );
     }
 
-    const chosenFuel =
-      fuels.find(fuel => fuel.id === list.summaryFuel) || fuels[0];
+    const chosenFuel = fuels.find(fuel => fuel.id === list.summaryFuel) || fuels[0];
 
     let fuelNeeded = 0;
     for (const operations of cooking.values()) {
@@ -1285,20 +1185,13 @@ window.createListSummary = function createListSummary(
         rawMaterials.get(id) ??
         processed.find(step => step.id === id)?.totalNeeded ??
         0;
-
-      if (neededForId > 0 && getHave(id) >= neededForId) {
-        completedEntries++;
-      }
+      if (neededForId > 0 && getHave(id) >= neededForId) completedEntries++;
     }
 
     const totalEntries = trackedIds.size;
     const progressPercent =
-      totalEntries > 0
-        ? Math.round((completedEntries / totalEntries) * 100)
-        : 0;
-
-    const isSummaryAllDone =
-      totalEntries > 0 && completedEntries === totalEntries;
+      totalEntries > 0 ? Math.round((completedEntries / totalEntries) * 100) : 0;
+    const isSummaryAllDone = totalEntries > 0 && completedEntries === totalEntries;
 
     if (
       notifyCompletionOnDraw &&
@@ -1312,9 +1205,7 @@ window.createListSummary = function createListSummary(
     wasSummaryAllDone = isSummaryAllDone;
     notifyCompletionOnDraw = false;
 
-    // 1. Kompakte Werkzeugleiste oben
     const toolbar = node("div", "tc-summary-toolbar");
-
     const progressWrap = node("div", "tc-progress-wrap");
     const progressMeta = node("div", "tc-progress-meta");
     progressMeta.append(
@@ -1338,14 +1229,29 @@ window.createListSummary = function createListSummary(
 
     const controls = node("div", "tc-controls");
 
+    const farmModeBtn = node(
+      "button",
+      `tc-farm-toggle-btn${list.summaryFarmMode ? " is-active" : ""}`,
+      de ? "⛏️ Farm-Modus" : "⛏️ Farm mode"
+    );
+    farmModeBtn.type = "button";
+    farmModeBtn.setAttribute("aria-pressed", String(list.summaryFarmMode));
+    farmModeBtn.title = de
+      ? "Kompakte Einkaufszettel-Ansicht nur für offene Rohstoffe"
+      : "Compact shopping list view for remaining raw materials";
+    farmModeBtn.addEventListener("click", () => {
+      list.summaryFarmMode = !list.summaryFarmMode;
+      save();
+      draw();
+    });
+    controls.append(farmModeBtn);
+
     const unitSwitch = node("div", "tc-unit-switch");
-    const units = [
+    for (const unit of [
       { id: "items", label: de ? "Stück" : "Items" },
       { id: "stacks", label: "Stacks" },
       { id: "shulkers", label: "Shulker" }
-    ];
-
-    for (const unit of units) {
+    ]) {
       const btn = node(
         "button",
         `tc-unit-btn${list.summaryUnitMode === unit.id ? " is-active" : ""}`,
@@ -1359,45 +1265,31 @@ window.createListSummary = function createListSummary(
       });
       unitSwitch.append(btn);
     }
-
     controls.append(unitSwitch);
 
     const fuelSelect = node("select", "tc-fuel-select");
-    fuelSelect.setAttribute(
-      "aria-label",
-      de ? "Brennstoff für Öfen" : "Fuel for furnaces"
-    );
-
+    fuelSelect.setAttribute("aria-label", de ? "Brennstoff für Öfen" : "Fuel for furnaces");
     for (const fuel of fuels) {
-      const ops = fuel.quarters / 4;
       const option = document.createElement("option");
       option.value = fuel.id;
       option.textContent = de
-        ? `Brennstoff: ${nameOf(fuel.id)} (${ops}×)`
-        : `Fuel: ${nameOf(fuel.id)} (${ops}×)`;
+        ? `Brennstoff: ${nameOf(fuel.id)} (${fuel.quarters / 4}×)`
+        : `Fuel: ${nameOf(fuel.id)} (${fuel.quarters / 4}×)`;
       fuelSelect.append(option);
     }
-
     fuelSelect.value = chosenFuel.id;
     fuelSelect.addEventListener("change", () => {
       list.summaryFuel = fuelSelect.value;
       save();
       draw();
     });
-
     controls.append(fuelSelect);
 
     if (Object.keys(inventory).length > 0) {
-      const resetBtn = node(
-        "button",
-        "tc-reset-btn",
-        de ? "Zurücksetzen" : "Reset"
-      );
+      const resetBtn = node("button", "tc-reset-btn", de ? "Zurücksetzen" : "Reset");
       resetBtn.type = "button";
       resetBtn.addEventListener("click", () => {
-        for (const key of Object.keys(inventory)) {
-          delete inventory[key];
-        }
+        for (const key of Object.keys(inventory)) delete inventory[key];
         save();
         draw();
       });
@@ -1407,7 +1299,10 @@ window.createListSummary = function createListSummary(
     toolbar.append(controls);
     body.append(toolbar);
 
-    // 2. Rezept- & Variantenentscheidungen
+    if (rawMaterials.size > 0) {
+      body.append(createStoragePlannerBar(rawMaterials));
+    }
+
     if (choiceBox.childElementCount > 0) {
       const choiceHeading =
         missingChoicesCount > 0
@@ -1416,11 +1311,7 @@ window.createListSummary = function createListSummary(
               ? `Entscheidungen für diese Liste (${missingChoicesCount} offen)`
               : `Choices for this list (${missingChoicesCount} missing)`
           )
-          : (
-            de
-              ? "Entscheidungen für diese Liste"
-              : "Choices for this list"
-          );
+          : (de ? "Entscheidungen für diese Liste" : "Choices for this list");
 
       choiceBox.prepend(node("h3", "", choiceHeading));
       body.append(choiceBox);
@@ -1429,31 +1320,20 @@ window.createListSummary = function createListSummary(
     if (warnings.length > 0) {
       const warningBox = node("div", "list-summary-warning");
       warningBox.append(
-        node(
-          "strong",
-          "",
-          de
-            ? "Berechnung noch unvollständig"
-            : "Calculation not complete yet"
-        )
+        node("strong", "", de ? "Berechnung noch unvollständig" : "Calculation not complete yet")
       );
-
       const warningList = node("ul", "");
       for (const warning of new Set(warnings)) {
         warningList.append(node("li", "", warning));
       }
-
       warningBox.append(warningList);
       body.append(warningBox);
     }
 
-    // 3. Teamcraft-Sektion 1: Sammeln
     const rawEntries = [...rawMaterials]
       .map(([id, totalNeeded]) => {
         const isFuelItem =
-          fuelNeeded > 0 &&
-          !chosenFuel.reusableBucket &&
-          id === chosenFuel.id;
+          fuelNeeded > 0 && !chosenFuel.reusableBucket && id === chosenFuel.id;
         return {
           id,
           totalNeeded,
@@ -1463,28 +1343,19 @@ window.createListSummary = function createListSummary(
       })
       .sort((a, b) => nameOf(a.id).localeCompare(nameOf(b.id), language));
 
+    if (list.summaryFarmMode) {
+      body.append(createFarmChecklistView(rawEntries, fuelNeeded, chosenFuel));
+      return;
+    }
+
     if (rawEntries.length > 0) {
-      const categoryOrder = [
-        "location",
-        "farm",
-        "trade",
-        "loot",
-        "other",
-        "fuel"
-      ];
-
-      const groupedRaw = new Map();
-      for (const cat of categoryOrder) {
-        groupedRaw.set(cat, []);
-      }
+      const categoryOrder = ["location", "farm", "trade", "loot", "other", "fuel"];
+      const groupedRaw = new Map(categoryOrder.map(cat => [cat, []]));
       for (const entry of rawEntries) {
-        const bucket = groupedRaw.get(entry.category) || groupedRaw.get("other");
-        bucket.push(entry);
+        (groupedRaw.get(entry.category) || groupedRaw.get("other")).push(entry);
       }
 
-      const activeCategories = categoryOrder.filter(
-        cat => groupedRaw.get(cat).length > 0
-      );
+      const activeCategories = categoryOrder.filter(cat => groupedRaw.get(cat).length > 0);
 
       body.append(
         createTeamcraftSection({
@@ -1494,21 +1365,12 @@ window.createListSummary = function createListSummary(
           entries: rawEntries,
           renderContent(container) {
             for (const cat of activeCategories) {
-              const itemsInCat = groupedRaw.get(cat);
-
               if (activeCategories.length > 1 || cat !== "other") {
-                container.append(
-                  node("div", "tc-group-header", sourceCategoryLabels[cat])
-                );
+                container.append(node("div", "tc-group-header", sourceCategoryLabels[cat]));
               }
 
-              for (const entry of itemsInCat) {
-                const sourceInfo = window.materialSources?.[entry.id];
-                const waysCount = Array.isArray(sourceInfo?.ways)
-                  ? sourceInfo.ways.length
-                  : 0;
-                const hasDetails = waysCount > 0 || entry.isFuelItem;
-
+              for (const entry of groupedRaw.get(cat)) {
+                const waysCount = window.materialSources?.[entry.id]?.ways?.length || 0;
                 const fuelHint = entry.isFuelItem
                   ? (de ? `inkl. ${fuelNeeded} Brennstoff` : `incl. ${fuelNeeded} fuel`)
                   : "";
@@ -1520,7 +1382,7 @@ window.createListSummary = function createListSummary(
                     stationName: sourceCategoryLabels[cat],
                     stationCount: waysCount > 1 ? `(${waysCount})` : "",
                     isGather: true,
-                    hasSourceDetails: hasDetails,
+                    hasSourceDetails: waysCount > 0 || entry.isFuelItem,
                     onPillClick: () =>
                       openSourceDialog({
                         id: entry.id,
@@ -1552,31 +1414,24 @@ window.createListSummary = function createListSummary(
       );
     }
 
-    // 4. Teamcraft-Sektion 2: Vorhergehende Handwerksschritte
-    const preCraftSteps = [...processed]
+    const preCraftSteps = processed
       .filter(step => !step.isRaw && !goalQuantities.has(step.id))
-      .sort((a, b) => {
-        if (b.depth !== a.depth) {
-          return b.depth - a.depth;
-        }
-        return nameOf(a.id).localeCompare(nameOf(b.id), language);
-      });
+      .sort((a, b) =>
+        b.depth !== a.depth
+          ? b.depth - a.depth
+          : nameOf(a.id).localeCompare(nameOf(b.id), language)
+      );
 
     if (preCraftSteps.length > 0) {
-      const distinctDepths = [
-        ...new Set(preCraftSteps.map(step => step.depth))
-      ].sort((a, b) => b - a);
-
-      const milestoneNumberByDepth = new Map(
-        distinctDepths.map((d, idx) => [d, idx + 1])
+      const distinctDepths = [...new Set(preCraftSteps.map(step => step.depth))].sort(
+        (a, b) => b - a
       );
+      const milestoneNumberByDepth = new Map(distinctDepths.map((d, idx) => [d, idx + 1]));
 
       body.append(
         createTeamcraftSection({
           sectionKey: "precrafts",
-          title: de
-            ? "Vorhergehende Handwerksschritte"
-            : "Pre-crafts",
+          title: de ? "Vorhergehende Handwerksschritte" : "Pre-crafts",
           itemCount: preCraftSteps.length,
           entries: preCraftSteps,
           renderContent(container) {
@@ -1595,28 +1450,13 @@ window.createListSummary = function createListSummary(
                 );
               }
 
-              const stationName =
-                recipeTypeNames[step.recipe?.type] || step.recipe?.type || "";
-              const stationCount =
-                step.batches > 0 ? `${step.batches}×` : "";
-
-              const surplusText =
-                step.produced > step.remaining && step.remaining > 0
-                  ? (
-                    de
-                      ? `+${step.produced - step.remaining} Überschuss`
-                      : `+${step.produced - step.remaining} extra`
-                  )
-                  : "";
-
               container.append(
                 createTeamcraftRow({
                   id: step.id,
                   totalNeeded: step.totalNeeded,
-                  stationName,
-                  stationCount,
-                  isGather: false,
-                  extraMeta: surplusText,
+                  stationName: recipeTypeNames[step.recipe?.type] || step.recipe?.type || "",
+                  stationCount: step.batches > 0 ? `${step.batches}×` : "",
+                  extraMeta: formatSurplus(step),
                   unitMode: list.summaryUnitMode
                 })
               );
@@ -1626,14 +1466,8 @@ window.createListSummary = function createListSummary(
       );
     }
 
-    // 5. Teamcraft-Sektion 3: Gegenstände
-    const processedById = new Map(
-      processed.map(step => [step.id, step])
-    );
-
-    const goalSteps = [...goalQuantities.keys()]
-      .map(id => processedById.get(id))
-      .filter(Boolean);
+    const processedById = new Map(processed.map(step => [step.id, step]));
+    const goalSteps = [...goalQuantities.keys()].map(id => processedById.get(id)).filter(Boolean);
 
     if (goalSteps.length > 0) {
       body.append(
@@ -1644,30 +1478,16 @@ window.createListSummary = function createListSummary(
           entries: goalSteps,
           renderContent(container) {
             for (const step of goalSteps) {
-              const stationName = step.recipe
-                ? (recipeTypeNames[step.recipe.type] || step.recipe.type)
-                : (de ? "Sammeln" : "Gather");
-
-              const stationCount =
-                step.recipe && step.batches > 0 ? `${step.batches}×` : "";
-
-              const surplusText =
-                step.produced > step.remaining && step.remaining > 0
-                  ? (
-                    de
-                      ? `+${step.produced - step.remaining} Überschuss`
-                      : `+${step.produced - step.remaining} extra`
-                  )
-                  : "";
-
               container.append(
                 createTeamcraftRow({
                   id: step.id,
                   totalNeeded: step.totalNeeded,
-                  stationName,
-                  stationCount,
+                  stationName: step.recipe
+                    ? (recipeTypeNames[step.recipe.type] || step.recipe.type)
+                    : (de ? "Sammeln" : "Gather"),
+                  stationCount: step.recipe && step.batches > 0 ? `${step.batches}×` : "",
                   isGather: !step.recipe,
-                  extraMeta: surplusText,
+                  extraMeta: formatSurplus(step),
                   unitMode: list.summaryUnitMode
                 })
               );
@@ -1689,6 +1509,5 @@ window.createListSummary = function createListSummary(
   }
 
   draw();
-
   return panel;
 };

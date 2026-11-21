@@ -1,6 +1,5 @@
 window.CraftLogHelpers = (function createCraftLogHelpers() {
-  // Brenndauer in Vierteln eines Schmelzvorgangs.
-  // Dadurch lassen sich auch Stock (2) und Bambus (1) ohne Rundungsfehler berechnen.
+  // Brenndauer in Vierteln eines Schmelzvorgangs (Stock = 2, Bambus = 1)
   const fuels = [
     { id: "minecraft:coal", quarters: 32 },
     { id: "minecraft:charcoal", quarters: 32 },
@@ -12,8 +11,7 @@ window.CraftLogHelpers = (function createCraftLogHelpers() {
     { id: "minecraft:lava_bucket", quarters: 400, reusableBucket: true }
   ];
 
-  // Rohstoffe, die direkt abgebaut werden und nicht über Erz-Schmelzen
-  // oder Block-Zerlegen als Handwerksschritt geplant werden sollen.
+  // Rohstoffe, die direkt abgebaut und nicht über Erz-Schmelzen geplant werden
   const BASE_RESOURCES = new Set([
     "minecraft:redstone",
     "minecraft:coal",
@@ -22,39 +20,8 @@ window.CraftLogHelpers = (function createCraftLogHelpers() {
     "minecraft:emerald",
     "minecraft:quartz"
   ]);
-const ICON_BASE_URL = "./assets/icons";
 
-  function iconUrlForItem(id) {
-    const shortId = fullId(id).replace(/^minecraft:/, "");
-    return `${ICON_BASE_URL}/${encodeURIComponent(shortId)}.png`;
-  }
-
-  function applyItemIcon(container, id) {
-    let img = container.querySelector("img.mc-icon-img");
-    if (!img) {
-      img = document.createElement("img");
-      img.className = "mc-icon-img";
-      img.alt = "";
-      img.loading = "lazy";
-      img.decoding = "async";
-
-      img.addEventListener("load", () => {
-        if (img.isConnected) {
-          container.classList.add("has-icon");
-        }
-      });
-
-      img.addEventListener("error", () => {
-        container.classList.remove("has-icon");
-        img.hidden = true;
-      });
-
-      container.append(img);
-    }
-
-    img.hidden = false;
-    img.src = iconUrlForItem(id);
-  }
+  const ICON_BASE_URL = "./assets/icons";
 
   const MATERIAL_COLORS = [
     [/pale_oak/, "#d6d2cc"],
@@ -106,10 +73,59 @@ const ICON_BASE_URL = "./assets/icons";
     [/obsidian/, "#291e3a"]
   ];
 
+  const WOOD_PREFIXES = [
+    "oak_", "spruce_", "birch_", "jungle_", "acacia_", "dark_oak_",
+    "mangrove_", "cherry_", "pale_oak_", "bamboo_", "crimson_", "warped_"
+  ];
+
+  const SUFFIX_GROUP_LABELS = [
+    ["_planks", "Beliebige Holzbretter", "Any Wooden Planks"],
+    ["_wool", "Beliebige Wolle", "Any Wool"],
+    ["_carpet", "Beliebiger Teppich", "Any Carpet"],
+    ["_bed", "Beliebiges Bett", "Any Bed"],
+    ["_banner", "Beliebiges Banner", "Any Banner"],
+    ["_glazed_terracotta", "Beliebige glasierte Keramik", "Any Glazed Terracotta"],
+    ["_terracotta", "Beliebige Keramik", "Any Terracotta"],
+    ["_concrete_powder", "Beliebiger Trockenbeton", "Any Concrete Powder"],
+    ["_concrete", "Beliebiger Beton", "Any Concrete"],
+    ["_candle", "Beliebige Kerze", "Any Candle"],
+    ["_shulker_box", "Beliebige Shulker-Kiste", "Any Shulker Box"],
+    ["_dye", "Beliebiger Farbstoff", "Any Dye"]
+  ];
+
   function fullId(id) {
-    return String(id || "").startsWith("minecraft:")
-      ? String(id)
-      : `minecraft:${id}`;
+    const raw = String(id || "");
+    return raw.startsWith("minecraft:") ? raw : `minecraft:${raw}`;
+  }
+
+  function iconUrlForItem(id) {
+    const shortId = fullId(id).replace(/^minecraft:/, "");
+    return `${ICON_BASE_URL}/${encodeURIComponent(shortId)}.png`;
+  }
+
+  function applyItemIcon(container, id) {
+    let img = container.querySelector("img.mc-icon-img");
+    if (!img) {
+      img = document.createElement("img");
+      img.className = "mc-icon-img";
+      img.alt = "";
+      img.loading = "lazy";
+      img.decoding = "async";
+
+      img.addEventListener("load", () => {
+        if (img.isConnected) container.classList.add("has-icon");
+      });
+
+      img.addEventListener("error", () => {
+        container.classList.remove("has-icon");
+        img.hidden = true;
+      });
+
+      container.append(img);
+    }
+
+    img.hidden = false;
+    img.src = iconUrlForItem(id);
   }
 
   function isBaseResource(id) {
@@ -117,18 +133,10 @@ const ICON_BASE_URL = "./assets/icons";
   }
 
   function optionsFor(ingredient) {
-    if (ingredient?.item) {
-      return [ingredient.item];
-    }
-
+    if (ingredient?.item) return [ingredient.item];
     if (Array.isArray(ingredient?.alternatives)) {
-      return [
-        ...new Set(
-          ingredient.alternatives.flatMap(optionsFor)
-        )
-      ];
+      return [...new Set(ingredient.alternatives.flatMap(optionsFor))];
     }
-
     return [];
   }
 
@@ -144,10 +152,7 @@ const ICON_BASE_URL = "./assets/icons";
 
     return recipe.ingredients.every(ingredient => {
       const options = optionsFor(ingredient);
-      return (
-        options.length > 0 &&
-        options.every(opt => /_ore$/.test(fullId(opt)))
-      );
+      return options.length > 0 && options.every(opt => /_ore$/.test(fullId(opt)));
     });
   }
 
@@ -162,17 +167,11 @@ const ICON_BASE_URL = "./assets/icons";
 
     const outCount = Number(recipe.count);
 
-    // 1. Lagerblock wieder in 9 Einzelitems zerlegen (z. B. 1 × Roheisenblock -> 9 × Roheisen).
-    // Klumpen (z. B. 1 × Eisenbarren -> 9 × Eisenklumpen für Laternen) bleiben erlaubt.
-    if (
-      outCount === 9 &&
-      recipe.ingredients.length === 1 &&
-      !/_nugget$/.test(id)
-    ) {
+    // 1. Lagerblock wieder in 9 Einzelitems zerlegen (Klumpen bleiben erlaubt)
+    if (outCount === 9 && recipe.ingredients.length === 1 && !/_nugget$/.test(id)) {
       const options = optionsFor(recipe.ingredients[0]);
       if (options.length === 1) {
-        const blockId = fullId(options[0]);
-        const blockRecipes = minecraft?.recipes?.[blockId] || [];
+        const blockRecipes = minecraft?.recipes?.[fullId(options[0])] || [];
         const canPackBack = blockRecipes.some(
           r =>
             Number(r.count) === 1 &&
@@ -183,21 +182,16 @@ const ICON_BASE_URL = "./assets/icons";
               return opts.length === 1 && fullId(opts[0]) === id;
             })
         );
-        if (canPackBack) {
-          return true;
-        }
+        if (canPackBack) return true;
       }
     }
 
-    // 2. 9 Klumpen wieder zu 1 Barren zusammensetzen (z. B. 9 × Eisenklumpen -> 1 × Eisenbarren)
+    // 2. 9 Klumpen wieder zu 1 Barren zusammensetzen
     if (outCount === 1 && recipe.ingredients.length === 9) {
-      const allSameNugget = recipe.ingredients.every(ing => {
+      return recipe.ingredients.every(ing => {
         const opts = optionsFor(ing);
         return opts.length === 1 && /_nugget$/.test(fullId(opts[0]));
       });
-      if (allSameNugget) {
-        return true;
-      }
     }
 
     return false;
@@ -205,48 +199,34 @@ const ICON_BASE_URL = "./assets/icons";
 
   function getEffectiveRecipes(id, minecraft) {
     const normalized = fullId(id);
-    if (isBaseResource(normalized)) {
-      return [];
-    }
+    if (isBaseResource(normalized)) return [];
 
     const recipes = minecraft?.recipes?.[normalized] || [];
-    if (recipes.length === 0) {
-      return [];
-    }
+    if (recipes.length === 0) return [];
 
     const withoutDecompression = recipes.filter(
       recipe => !isRedundantDecompressionRecipe(normalized, recipe, minecraft)
     );
-
-    if (withoutDecompression.length <= 1) {
-      return withoutDecompression;
-    }
+    if (withoutDecompression.length <= 1) return withoutDecompression;
 
     const withoutOreSmelting = withoutDecompression.filter(
       recipe => !isOreSmeltingRecipe(recipe)
     );
-
-    return withoutOreSmelting.length > 0
-      ? withoutOreSmelting
-      : withoutDecompression;
+    return withoutOreSmelting.length > 0 ? withoutOreSmelting : withoutDecompression;
   }
 
   function colorForItem(id) {
     const shortId = fullId(id).replace(/^minecraft:/, "");
 
     for (const [pattern, color] of MATERIAL_COLORS) {
-      if (pattern.test(shortId)) {
-        return color;
-      }
+      if (pattern.test(shortId)) return color;
     }
 
     let hash = 0;
     for (let i = 0; i < shortId.length; i++) {
       hash = (hash * 31 + shortId.charCodeAt(i)) >>> 0;
     }
-
-    const hue = hash % 360;
-    return `hsl(${hue}, 38%, 52%)`;
+    return `hsl(${hash % 360}, 38%, 52%)`;
   }
 
   function getRecipeTypeNames(language) {
@@ -277,39 +257,29 @@ const ICON_BASE_URL = "./assets/icons";
   }
 
   function formatQuantity(amount, unitMode) {
-    const n = Math.max(0, Math.floor(Number(amount) || 0));
+    let remaining = Math.max(0, Math.floor(Number(amount) || 0));
+    if (unitMode === "items" || remaining < 64) return String(remaining);
 
-    if (unitMode === "shulkers" && n >= 1728) {
-      const shulkers = Math.floor(n / 1728);
-      const restAfterShulker = n % 1728;
-      const stacks = Math.floor(restAfterShulker / 64);
-      const rest = restAfterShulker % 64;
-      const parts = [`${shulkers} Shulker`];
-      if (stacks > 0) {
-        parts.push(stacks === 1 ? "1 Stack" : `${stacks} Stacks`);
-      }
-      if (rest > 0) {
-        parts.push(`${rest}`);
-      }
-      return parts.join(" + ");
+    const parts = [];
+    if (unitMode === "shulkers" && remaining >= 1728) {
+      const shulkers = Math.floor(remaining / 1728);
+      remaining %= 1728;
+      parts.push(`${shulkers} Shulker`);
     }
 
-    if ((unitMode === "stacks" || unitMode === "shulkers") && n >= 64) {
-      const stacks = Math.floor(n / 64);
-      const rest = n % 64;
-      const label = stacks === 1 ? "1 Stack" : `${stacks} Stacks`;
-      return rest > 0 ? `${label} + ${rest}` : label;
+    if (remaining >= 64) {
+      const stacks = Math.floor(remaining / 64);
+      remaining %= 64;
+      parts.push(stacks === 1 ? "1 Stack" : `${stacks} Stacks`);
     }
 
-    return String(n);
+    if (remaining > 0) parts.push(String(remaining));
+    return parts.join(" + ");
   }
 
   function describeIngredientGroup(optionIds, rawIngredient, nameOf, language) {
     const de = language === "de";
-    const ids = (optionIds || []).map(id =>
-      fullId(id).replace(/^minecraft:/, "")
-    );
-
+    const ids = (optionIds || []).map(id => fullId(id).replace(/^minecraft:/, ""));
     const tag = rawIngredient?.tag
       ? fullId(rawIngredient.tag).replace(/^minecraft:/, "")
       : "";
@@ -335,147 +305,54 @@ const ICON_BASE_URL = "./assets/icons";
       saplings: de ? "Beliebiger Setzling" : "Any Sapling"
     };
 
-    if (tag && tagLabels[tag]) {
-      return tagLabels[tag];
-    }
-
-    if (ids.length === 0) {
-      return tag ? (de ? `Gruppe ${tag}` : `Group ${tag}`) : "";
-    }
-
-    if (ids.length === 1) {
-      return nameOf(ids[0]);
-    }
+    if (tag && tagLabels[tag]) return tagLabels[tag];
+    if (ids.length === 0) return tag ? (de ? `Gruppe ${tag}` : `Group ${tag}`) : "";
+    if (ids.length === 1) return nameOf(ids[0]);
 
     const every = fn => ids.every(fn);
     const idSet = new Set(ids);
 
-    if (every(id => id.endsWith("_planks"))) {
-      return de ? "Beliebige Holzbretter" : "Any Wooden Planks";
+    for (const [suffix, deLabel, enLabel] of SUFFIX_GROUP_LABELS) {
+      if (every(id => id.endsWith(suffix))) return de ? deLabel : enLabel;
     }
 
-    if (
-      every(
-        id =>
-          id.endsWith("_log") ||
-          id.endsWith("_stem") ||
-          id.endsWith("_wood") ||
-          id.endsWith("_hyphae")
-      )
-    ) {
+    if (every(id => /_(log|stem|wood|hyphae)$/.test(id))) {
       return de ? "Beliebige Stämme / Holz" : "Any Logs / Wood";
     }
 
     if (every(id => id.endsWith("_slab"))) {
-      const woodPrefixes = [
-        "oak_",
-        "spruce_",
-        "birch_",
-        "jungle_",
-        "acacia_",
-        "dark_oak_",
-        "mangrove_",
-        "cherry_",
-        "pale_oak_",
-        "bamboo_",
-        "crimson_",
-        "warped_"
-      ];
-
-      if (every(id => woodPrefixes.some(prefix => id.startsWith(prefix)))) {
-        return de ? "Beliebige Holzstufen" : "Any Wooden Slabs";
-      }
-
-      return de ? "Beliebige Stufen" : "Any Slabs";
-    }
-
-    if (every(id => id.endsWith("_wool"))) {
-      return de ? "Beliebige Wolle" : "Any Wool";
-    }
-
-    if (every(id => id.endsWith("_carpet"))) {
-      return de ? "Beliebiger Teppich" : "Any Carpet";
-    }
-
-    if (every(id => id.endsWith("_bed"))) {
-      return de ? "Beliebiges Bett" : "Any Bed";
-    }
-
-    if (every(id => id.endsWith("_banner"))) {
-      return de ? "Beliebiges Banner" : "Any Banner";
-    }
-
-    if (every(id => id.endsWith("_glazed_terracotta"))) {
-      return de ? "Beliebige glasierte Keramik" : "Any Glazed Terracotta";
-    }
-
-    if (every(id => id.endsWith("_terracotta"))) {
-      return de ? "Beliebige Keramik" : "Any Terracotta";
-    }
-
-    if (every(id => id.endsWith("_concrete_powder"))) {
-      return de ? "Beliebiger Trockenbeton" : "Any Concrete Powder";
-    }
-
-    if (every(id => id.endsWith("_concrete"))) {
-      return de ? "Beliebiger Beton" : "Any Concrete";
+      return every(id => WOOD_PREFIXES.some(prefix => id.startsWith(prefix)))
+        ? (de ? "Beliebige Holzstufen" : "Any Wooden Slabs")
+        : (de ? "Beliebige Stufen" : "Any Slabs");
     }
 
     if (every(id => id === "glass" || id.endsWith("_stained_glass"))) {
       return de ? "Beliebiges Glas" : "Any Glass";
     }
 
-    if (
-      every(id => id === "glass_pane" || id.endsWith("_stained_glass_pane"))
-    ) {
+    if (every(id => id === "glass_pane" || id.endsWith("_stained_glass_pane"))) {
       return de ? "Beliebige Glasscheibe" : "Any Glass Pane";
-    }
-
-    if (every(id => id.endsWith("_candle"))) {
-      return de ? "Beliebige Kerze" : "Any Candle";
-    }
-
-    if (every(id => id.endsWith("_shulker_box"))) {
-      return de ? "Beliebige Shulker-Kiste" : "Any Shulker Box";
     }
 
     if (
       every(
         id =>
           id.endsWith("_sapling") ||
-          id === "mangrove_propagule" ||
-          id === "azalea" ||
-          id === "flowering_azalea"
+          ["mangrove_propagule", "azalea", "flowering_azalea"].includes(id)
       )
     ) {
       return de ? "Beliebiger Setzling" : "Any Sapling";
     }
 
-    if (every(id => id.endsWith("_dye"))) {
-      return de ? "Beliebiger Farbstoff" : "Any Dye";
-    }
-
-    if (
-      ids.length === 2 &&
-      idSet.has("coal") &&
-      idSet.has("charcoal")
-    ) {
+    if (ids.length === 2 && idSet.has("coal") && idSet.has("charcoal")) {
       return de ? "Kohle oder Holzkohle" : "Coal or Charcoal";
     }
 
-    if (
-      ids.length === 2 &&
-      idSet.has("sand") &&
-      idSet.has("red_sand")
-    ) {
+    if (ids.length === 2 && idSet.has("sand") && idSet.has("red_sand")) {
       return de ? "Sand oder Roter Sand" : "Sand or Red Sand";
     }
 
-    if (
-      every(id =>
-        ["cobblestone", "cobbled_deepslate", "blackstone"].includes(id)
-      )
-    ) {
+    if (every(id => ["cobblestone", "cobbled_deepslate", "blackstone"].includes(id))) {
       return de
         ? "Bruchstein / Tiefenschiefer / Schwarzstein"
         : "Cobblestone / Deepslate / Blackstone";
@@ -493,12 +370,9 @@ const ICON_BASE_URL = "./assets/icons";
   }
 
   function summarizeRecipeIngredients(recipe, nameOf, language) {
-    if (!recipe || !Array.isArray(recipe.ingredients)) {
-      return "";
-    }
+    if (!recipe || !Array.isArray(recipe.ingredients)) return "";
 
     const groups = new Map();
-
     for (const ingredient of recipe.ingredients) {
       const options = optionsFor(ingredient);
       const label =
@@ -506,8 +380,7 @@ const ICON_BASE_URL = "./assets/icons";
           ? nameOf(options[0])
           : describeIngredientGroup(options, ingredient, nameOf, language);
 
-      if (!label) continue;
-      groups.set(label, (groups.get(label) || 0) + 1);
+      if (label) groups.set(label, (groups.get(label) || 0) + 1);
     }
 
     return [...groups.entries()]
@@ -521,27 +394,19 @@ const ICON_BASE_URL = "./assets/icons";
     const options = [];
 
     recipes.forEach((recipe, index) => {
-      const ingredientSummary = summarizeRecipeIngredients(
-        recipe,
-        nameOf,
-        language
-      );
-      const signature = `${recipe.type}|${recipe.count || 1}|${ingredientSummary}`;
+      const ingredientSummary = summarizeRecipeIngredients(recipe, nameOf, language);
+      const outCount = recipe.count || 1;
+      const signature = `${recipe.type}|${outCount}|${ingredientSummary}`;
 
-      if (seenSignatures.has(signature)) {
-        return;
-      }
+      if (seenSignatures.has(signature)) return;
       seenSignatures.add(signature);
 
       const station = recipeTypeNames[recipe.type] || recipe.type;
-      const outCount = recipe.count || 1;
-      const label = ingredientSummary
-        ? `${station}: ${ingredientSummary} → ${outCount} ×`
-        : `${station} (${outCount} ×)`;
-
       options.push({
         value: String(index),
-        label
+        label: ingredientSummary
+          ? `${station}: ${ingredientSummary} → ${outCount} ×`
+          : `${station} (${outCount} ×)`
       });
     });
 
