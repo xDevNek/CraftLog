@@ -1,4 +1,4 @@
-const CACHE_NAME = "craftlog-v0.0.47";
+const CACHE_NAME = "craftlog-v0.0.48";
 const ICON_CACHE = "craftlog-icons-v1";
 
 const CORE_ASSETS = [

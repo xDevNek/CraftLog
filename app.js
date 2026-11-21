@@ -383,7 +383,7 @@ try {
   language = "de";
 }
 
-let appVersion = "0.0.41";
+let appVersion = "0.0.42";
 try {
   const cachedVersion = localStorage.getItem(VERSION_KEY);
   if (cachedVersion) appVersion = cachedVersion;
@@ -555,11 +555,14 @@ async function encodeSharePayload(payload) {
   if (typeof CompressionStream !== "undefined") {
     try {
       const cs = new CompressionStream("deflate-raw");
+      const compressedPromise = new Response(cs.readable).arrayBuffer();
       const writer = cs.writable.getWriter();
       await writer.write(rawBytes);
       await writer.close();
-      const compressed = new Uint8Array(await new Response(cs.readable).arrayBuffer());
-      return "z." + bytesToBase64Url(compressed);
+      const compressed = new Uint8Array(await compressedPromise);
+      if (compressed.length > 0 && compressed.length < rawBytes.length) {
+        return "z." + bytesToBase64Url(compressed);
+      }
     } catch {
       // Fallback auf unkomprimiertes Base64URL
     }
@@ -571,10 +574,11 @@ async function decodeSharePayload(encoded) {
   if (encoded.startsWith("z.") && typeof DecompressionStream !== "undefined") {
     const bytes = base64UrlToBytes(encoded.slice(2));
     const ds = new DecompressionStream("deflate-raw");
+    const rawPromise = new Response(ds.readable).arrayBuffer();
     const writer = ds.writable.getWriter();
     await writer.write(bytes);
     await writer.close();
-    const raw = await new Response(ds.readable).arrayBuffer();
+    const raw = await rawPromise;
     return JSON.parse(new TextDecoder().decode(raw));
   }
   const rawPart = encoded.startsWith("u.") ? encoded.slice(2) : encoded;
@@ -808,10 +812,14 @@ function openManualShareDialog(shareUrl, buttonEl) {
   actions.className = "tc-dialog-actions";
 
   let closeDialog = () => {};
-  const copyBtn = makeButton(t().shareManualCopy, "primary-button", () => {
+  const copyBtn = makeButton(t().shareManualCopy, "primary-button", async () => {
     input.focus();
     input.select();
-    document.execCommand("copy");
+    try {
+      await navigator.clipboard.writeText(input.value);
+    } catch {
+      document.execCommand("copy");
+    }
     closeDialog();
     animateShareButtonCopied(buttonEl);
   });
@@ -830,27 +838,31 @@ function openManualShareDialog(shareUrl, buttonEl) {
 async function shareProjectList(list, buttonEl) {
   if (!list) return;
 
-  const compact = {
-    v: 2,
-    n: String(list.name || "CraftLog Projekt").slice(0, 60),
-    note: list.notes ? String(list.notes).slice(0, 1000) : "",
-    i: (list.items || []).map(it => [
-      String(it.blockId || "").replace(/^minecraft:/, ""),
-      Math.max(1, Number(it.quantity) || 1),
-      it.done ? 1 : 0
-    ]),
-    c: list.summaryChoices || {}
-  };
-
-  const token = await encodeSharePayload(compact);
-  const baseUrl = window.location.href.split("#")[0];
-  const shareUrl = `${baseUrl}#share=${token}`;
-
   try {
-    await navigator.clipboard.writeText(shareUrl);
-    animateShareButtonCopied(buttonEl);
-  } catch {
-    openManualShareDialog(shareUrl, buttonEl);
+    const compact = {
+      v: 2,
+      n: String(list.name || "CraftLog Projekt").slice(0, 60),
+      note: list.notes ? String(list.notes).slice(0, 1000) : "",
+      i: (list.items || []).map(it => [
+        String(it.blockId || "").replace(/^minecraft:/, ""),
+        Math.max(1, Number(it.quantity) || 1),
+        it.done ? 1 : 0
+      ]),
+      c: list.summaryChoices || {}
+    };
+
+    const token = await encodeSharePayload(compact);
+    const baseUrl = window.location.href.split("#")[0];
+    const shareUrl = `${baseUrl}#share=${token}`;
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      animateShareButtonCopied(buttonEl);
+    } catch {
+      openManualShareDialog(shareUrl, buttonEl);
+    }
+  } catch (err) {
+    console.error("Teilen-Link konnte nicht erstellt werden:", err);
   }
 }
 
