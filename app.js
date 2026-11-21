@@ -400,6 +400,7 @@ let highlightedItemId = null;
 
 let incomingSharePayload = null;
 let shareCopyResetTimer = null;
+let shareAnimStyleInjected = false;
 
 let activeToast = null;
 let toastTimerId = null;
@@ -580,20 +581,185 @@ async function decodeSharePayload(encoded) {
   return JSON.parse(new TextDecoder().decode(base64UrlToBytes(rawPart)));
 }
 
+function ensureShareButtonAnimationStyles() {
+  if (shareAnimStyleInjected || document.getElementById("craftlog-share-anim-styles")) {
+    shareAnimStyleInjected = true;
+    return;
+  }
+
+  const style = document.createElement("style");
+  style.id = "craftlog-share-anim-styles";
+  style.textContent = `
+    .qol-share-btn {
+      position: relative;
+      overflow: hidden;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transform-origin: center center;
+      will-change: transform;
+      transition:
+        background-color 200ms ease,
+        border-color 200ms ease,
+        color 200ms ease,
+        box-shadow 200ms ease;
+    }
+
+    .qol-share-btn.is-copied {
+      border-color: var(--mc-grass, #629a50) !important;
+      background: var(--forest-light, #e7efe3) !important;
+      color: var(--forest, #376b43) !important;
+      font-weight: bold;
+      box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--mc-grass, #629a50) 32%, transparent),
+        0 6px 16px rgba(55, 107, 67, 0.24) !important;
+      animation: craftlogShareBtnBounce 560ms cubic-bezier(0.22, 1.35, 0.36, 1) both !important;
+    }
+
+    :root[data-theme="dark"] .qol-share-btn.is-copied {
+      box-shadow:
+        0 0 0 3px rgba(161, 209, 143, 0.3),
+        0 6px 18px rgba(0, 0, 0, 0.45) !important;
+    }
+
+    .qol-share-btn.is-copied::after {
+      content: "";
+      position: absolute;
+      top: -25%;
+      left: -65%;
+      width: 45%;
+      height: 150%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.55),
+        transparent
+      );
+      transform: rotate(22deg);
+      pointer-events: none;
+      animation: craftlogShareBtnShine 620ms 60ms ease-out forwards;
+    }
+
+    .qol-share-btn-icon {
+      display: inline-block;
+      transform-origin: center center;
+    }
+
+    .qol-share-btn.is-copied .qol-share-btn-icon {
+      animation: craftlogShareCheckPop 420ms cubic-bezier(0.2, 1.5, 0.4, 1) both;
+    }
+
+    .qol-share-sparkle {
+      position: fixed;
+      z-index: 2147483647;
+      width: 7px;
+      height: 7px;
+      pointer-events: none;
+      border-radius: 1px;
+      box-shadow: 0 0 0 1px rgba(16, 18, 16, 0.65);
+      animation: craftlogShareSparkleFly 680ms cubic-bezier(0.16, 0.84, 0.32, 1) forwards;
+    }
+
+    @keyframes craftlogShareBtnBounce {
+      0% { transform: scale(0.86); }
+      35% { transform: scale(1.13); }
+      62% { transform: scale(0.96); }
+      82% { transform: scale(1.03); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes craftlogShareBtnShine {
+      0% { left: -65%; }
+      100% { left: 145%; }
+    }
+
+    @keyframes craftlogShareCheckPop {
+      0% { transform: scale(0.2) rotate(-35deg); opacity: 0; }
+      60% { transform: scale(1.35) rotate(8deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    @keyframes craftlogShareSparkleFly {
+      0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1) rotate(0deg);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(var(--sx, 0px), var(--sy, -36px)) scale(0.35) rotate(160deg);
+      }
+    }
+  `;
+  document.head.appendChild(style);
+  shareAnimStyleInjected = true;
+}
+
+function setShareButtonContent(buttonEl, copied) {
+  if (!buttonEl) return;
+  const rawLabel = copied ? t().shareCopiedBtn : t().shareBtn;
+  const spaceIdx = rawLabel.indexOf(" ");
+  const iconText = spaceIdx > 0 ? rawLabel.slice(0, spaceIdx) : (copied ? "✓" : "🔗");
+  const labelText = spaceIdx > 0 ? rawLabel.slice(spaceIdx + 1) : rawLabel;
+
+  buttonEl.replaceChildren();
+  const iconSpan = document.createElement("span");
+  iconSpan.className = "qol-share-btn-icon";
+  iconSpan.setAttribute("aria-hidden", "true");
+  iconSpan.textContent = iconText;
+
+  const textSpan = document.createElement("span");
+  textSpan.textContent = labelText;
+
+  buttonEl.append(iconSpan, textSpan);
+}
+
+function spawnShareButtonSparkles(buttonEl) {
+  if (!buttonEl || !buttonEl.isConnected) return;
+  const rect = buttonEl.getBoundingClientRect();
+  if (rect.width === 0 && rect.height === 0) return;
+
+  const colors = ["#80ff20", "#a1d18f", "#fff176", "#629a50", "#ffffff"];
+  const count = 12;
+
+  for (let i = 0; i < count; i += 1) {
+    const spark = document.createElement("span");
+    spark.className = "qol-share-sparkle";
+
+    const startX = rect.left + rect.width * (0.15 + Math.random() * 0.7);
+    const startY = rect.top + rect.height * (0.2 + Math.random() * 0.6);
+    const angle = -Math.PI * (0.1 + Math.random() * 0.8);
+    const dist = 24 + Math.random() * 34;
+
+    spark.style.left = `${Math.round(startX)}px`;
+    spark.style.top = `${Math.round(startY)}px`;
+    spark.style.background = colors[i % colors.length];
+    spark.style.setProperty("--sx", `${Math.round(Math.cos(angle) * dist)}px`);
+    spark.style.setProperty("--sy", `${Math.round(Math.sin(angle) * dist)}px`);
+
+    document.body.appendChild(spark);
+    setTimeout(() => spark.remove(), 720);
+  }
+}
+
 function animateShareButtonCopied(buttonEl) {
   if (!buttonEl) return;
+  ensureShareButtonAnimationStyles();
+
   buttonEl.classList.remove("is-copied");
   void buttonEl.offsetWidth;
+  setShareButtonContent(buttonEl, true);
   buttonEl.classList.add("is-copied");
-  buttonEl.textContent = t().shareCopiedBtn;
+
+  spawnShareButtonSparkles(buttonEl);
+  playMinecraftToastSound("create");
 
   clearTimeout(shareCopyResetTimer);
   shareCopyResetTimer = setTimeout(() => {
     if (buttonEl.isConnected) {
       buttonEl.classList.remove("is-copied");
-      buttonEl.textContent = t().shareBtn;
+      setShareButtonContent(buttonEl, false);
     }
-  }, 2200);
+  }, 2400);
 }
 
 function openManualShareDialog(shareUrl, buttonEl) {
@@ -3413,9 +3579,11 @@ function renderWorkspace() {
   const actions = document.createElement("div");
   actions.className = "heading-actions";
 
-  const shareBtn = makeButton(t().shareBtn, "quiet-button qol-share-btn", () =>
+  ensureShareButtonAnimationStyles();
+  const shareBtn = makeButton("", "quiet-button qol-share-btn", () =>
     shareProjectList(list, shareBtn)
   );
+  setShareButtonContent(shareBtn, false);
 
   const duplicateBtn = makeButton(t().duplicate, "quiet-button", () =>
     duplicateListAsTemplate(list)
