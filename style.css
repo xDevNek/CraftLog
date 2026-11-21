@@ -94,31 +94,12 @@ summary:focus-visible {
   gap: 0.9rem;
 }
 
-.brand-logo {
+.brand img {
   display: block;
   width: 38px;
   height: 38px;
   flex: 0 0 38px;
   object-fit: contain;
-}
-
-.brand-mark {
-  width: 38px;
-  height: 38px;
-  display: grid;
-  place-items: center;
-  border: 0;
-  border-radius: 3px;
-  background: linear-gradient(
-    to bottom,
-    var(--mc-grass) 0 32%,
-    var(--mc-soil) 32% 100%
-  );
-  color: #fff;
-  box-shadow: inset 0 0 0 2px #0002;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.35rem;
-  font-weight: bold;
 }
 
 .brand-name {
@@ -486,6 +467,43 @@ summary:focus-visible {
   font-size: 0.83rem;
 }
 
+/* Animiertes Feedback direkt auf dem Link-teilen-Button */
+@keyframes qolShareSuccessPop {
+  0% {
+    transform: scale(0.95);
+  }
+  45% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.qol-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.qol-share-btn.is-copied {
+  border-color: var(--mc-grass, var(--forest));
+  background: var(--forest-light);
+  color: var(--forest);
+  font-weight: bold;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mc-grass, var(--forest)) 25%, transparent);
+  animation: qolShareSuccessPop 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root[data-theme="dark"] .qol-share-btn.is-copied {
+  box-shadow: 0 0 0 2px rgba(161, 209, 143, 0.22);
+}
+
 /* Teilen-Import-Banner */
 .qol-share-banner {
   display: flex;
@@ -511,60 +529,6 @@ summary:focus-visible {
 .qol-share-banner-actions {
   display: flex;
   gap: 0.45rem;
-}
-
-/* Undo-Toast */
-.qol-toast {
-  position: fixed;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 1.25rem);
-  left: 50%;
-  transform: translate(-50%, 140%);
-  z-index: 9999;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.85rem;
-  max-width: min(440px, calc(100vw - 1.5rem));
-  padding: 0.65rem 0.9rem;
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--mc-grass);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
-  opacity: 0;
-  pointer-events: none;
-  transition: transform 200ms ease, opacity 200ms ease;
-}
-
-.qol-toast.is-visible {
-  transform: translate(-50%, 0);
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.qol-toast-text {
-  font-size: 0.86rem;
-  font-weight: 500;
-}
-
-.qol-toast-undo {
-  padding: 0.28rem 0.65rem;
-  border: 1px solid var(--forest);
-  border-radius: 5px;
-  background: var(--forest-light);
-  color: var(--forest);
-  font-size: 0.8rem;
-  font-weight: bold;
-  white-space: nowrap;
-}
-
-.qol-toast-undo:hover {
-  background: var(--forest);
-  color: #fff;
-}
-
-:root[data-theme="dark"] .qol-toast-undo:hover {
-  color: #152019;
 }
 
 /* Projekt-Notizen & Koordinaten */
