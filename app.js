@@ -78,6 +78,20 @@ const translations = {
       "Erstelle links deine erste Liste, füge eine kopierte Liste per Strg+V ein oder importiere eine .litematic-Datei.",
     listDescription:
       "Plane benötigte Blöcke und Gegenstände für dein Projekt.",
+    shareBtn: "🔗 Link teilen",
+    shareCopiedBtn: "✓ Link kopiert!",
+    shareManualTitle: "Teilen-Link kopieren",
+    shareManualHint:
+      "Dein Browser blockiert automatisches Kopieren. Kopiere den Link hier manuell:",
+    shareManualCopy: "Kopieren",
+    shareManualClose: "Schließen",
+    sharedBannerTitle: "Geteilte Projektliste erkannt",
+    sharedBannerMeta: (name, count) => `„${name}“ (${count} Materialien)`,
+    sharedImportBtn: "Liste übernehmen",
+    sharedDismissBtn: "Schließen",
+    stepMinus1: "Menge um 1 verringern",
+    stepPlus1: "Menge um 1 erhöhen",
+    stepPlus64: "1 Stack (+64) hinzufügen",
     duplicate: "Duplizieren",
     duplicateTitle:
       "Liste inklusive Notizen und Rezeptwahl als neue Vorlage kopieren",
@@ -218,6 +232,20 @@ const translations = {
       "Create your first list on the left, paste a copied list with Ctrl+V, or import a .litematic schematic.",
     listDescription:
       "Plan the blocks and items needed for your project.",
+    shareBtn: "🔗 Share link",
+    shareCopiedBtn: "✓ Link copied!",
+    shareManualTitle: "Copy share link",
+    shareManualHint:
+      "Your browser blocked automatic clipboard access. Copy the link manually:",
+    shareManualCopy: "Copy",
+    shareManualClose: "Close",
+    sharedBannerTitle: "Shared project list detected",
+    sharedBannerMeta: (name, count) => `"${name}" (${count} materials)`,
+    sharedImportBtn: "Import list",
+    sharedDismissBtn: "Dismiss",
+    stepMinus1: "Decrease quantity by 1",
+    stepPlus1: "Increase quantity by 1",
+    stepPlus64: "Add 1 stack (+64)",
     duplicate: "Duplicate",
     duplicateTitle:
       "Copy list including notes and recipe choices as a fresh template",
@@ -355,7 +383,7 @@ try {
   language = "de";
 }
 
-let appVersion = "0.0.35";
+let appVersion = "0.0.41";
 try {
   const cachedVersion = localStorage.getItem(VERSION_KEY);
   if (cachedVersion) appVersion = cachedVersion;
@@ -369,6 +397,9 @@ let catalogById = new Map();
 let catalogByLookup = new Map();
 let loadError = false;
 let highlightedItemId = null;
+
+let incomingSharePayload = null;
+let shareCopyResetTimer = null;
 
 let activeToast = null;
 let toastTimerId = null;
@@ -501,6 +532,238 @@ function save() {
 }
 
 save();
+
+/* === Projektlisten als komprimierten Link teilen & importieren === */
+function bytesToBase64Url(bytes) {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function base64UrlToBytes(str) {
+  const base64 = str.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+async function encodeSharePayload(payload) {
+  const rawBytes = new TextEncoder().encode(JSON.stringify(payload));
+  if (typeof CompressionStream !== "undefined") {
+    try {
+      const cs = new CompressionStream("deflate-raw");
+      const writer = cs.writable.getWriter();
+      await writer.write(rawBytes);
+      await writer.close();
+      const compressed = new Uint8Array(await new Response(cs.readable).arrayBuffer());
+      return "z." + bytesToBase64Url(compressed);
+    } catch {
+      // Fallback auf unkomprimiertes Base64URL
+    }
+  }
+  return "u." + bytesToBase64Url(rawBytes);
+}
+
+async function decodeSharePayload(encoded) {
+  if (encoded.startsWith("z.") && typeof DecompressionStream !== "undefined") {
+    const bytes = base64UrlToBytes(encoded.slice(2));
+    const ds = new DecompressionStream("deflate-raw");
+    const writer = ds.writable.getWriter();
+    await writer.write(bytes);
+    await writer.close();
+    const raw = await new Response(ds.readable).arrayBuffer();
+    return JSON.parse(new TextDecoder().decode(raw));
+  }
+  const rawPart = encoded.startsWith("u.") ? encoded.slice(2) : encoded;
+  return JSON.parse(new TextDecoder().decode(base64UrlToBytes(rawPart)));
+}
+
+function animateShareButtonCopied(buttonEl) {
+  if (!buttonEl) return;
+  buttonEl.classList.remove("is-copied");
+  void buttonEl.offsetWidth;
+  buttonEl.classList.add("is-copied");
+  buttonEl.textContent = t().shareCopiedBtn;
+
+  clearTimeout(shareCopyResetTimer);
+  shareCopyResetTimer = setTimeout(() => {
+    if (buttonEl.isConnected) {
+      buttonEl.classList.remove("is-copied");
+      buttonEl.textContent = t().shareBtn;
+    }
+  }, 2200);
+}
+
+function openManualShareDialog(shareUrl, buttonEl) {
+  document.getElementById("qol-share-dialog")?.remove();
+
+  const dialog = document.createElement("dialog");
+  dialog.id = "qol-share-dialog";
+  dialog.className = "tc-source-dialog";
+
+  const inner = document.createElement("div");
+  inner.className = "tc-dialog-inner";
+
+  const header = document.createElement("div");
+  header.className = "tc-dialog-header";
+
+  const titleGroup = document.createElement("div");
+  titleGroup.className = "tc-dialog-title-group";
+
+  const title = document.createElement("h3");
+  title.className = "tc-dialog-title";
+  title.textContent = t().shareManualTitle;
+  titleGroup.append(title);
+
+  const closeBtn = document.createElement("button");
+  closeBtn.type = "button";
+  closeBtn.className = "tc-dialog-close";
+  closeBtn.textContent = "×";
+  closeBtn.setAttribute("aria-label", t().shareManualClose);
+
+  header.append(titleGroup, closeBtn);
+
+  const body = document.createElement("div");
+  body.className = "tc-dialog-body";
+
+  const hint = document.createElement("p");
+  hint.className = "tc-dialog-empty";
+  hint.textContent = t().shareManualHint;
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "litematica-name-input";
+  input.readOnly = true;
+  input.value = shareUrl;
+
+  const actions = document.createElement("div");
+  actions.className = "tc-dialog-actions";
+
+  let closeDialog = () => {};
+  const copyBtn = makeButton(t().shareManualCopy, "primary-button", () => {
+    input.focus();
+    input.select();
+    document.execCommand("copy");
+    closeDialog();
+    animateShareButtonCopied(buttonEl);
+  });
+  const cancelBtn = makeButton(t().shareManualClose, "quiet-button", () => closeDialog());
+
+  actions.append(copyBtn, cancelBtn);
+  body.append(hint, input, actions);
+  inner.append(header, body);
+  dialog.append(inner);
+
+  closeDialog = openModalDialog(dialog, closeBtn);
+  input.focus();
+  input.select();
+}
+
+async function shareProjectList(list, buttonEl) {
+  if (!list) return;
+
+  const compact = {
+    v: 2,
+    n: String(list.name || "CraftLog Projekt").slice(0, 60),
+    note: list.notes ? String(list.notes).slice(0, 1000) : "",
+    i: (list.items || []).map(it => [
+      String(it.blockId || "").replace(/^minecraft:/, ""),
+      Math.max(1, Number(it.quantity) || 1),
+      it.done ? 1 : 0
+    ]),
+    c: list.summaryChoices || {}
+  };
+
+  const token = await encodeSharePayload(compact);
+  const baseUrl = window.location.href.split("#")[0];
+  const shareUrl = `${baseUrl}#share=${token}`;
+
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+    animateShareButtonCopied(buttonEl);
+  } catch {
+    openManualShareDialog(shareUrl, buttonEl);
+  }
+}
+
+function createIncomingShareBanner() {
+  if (!incomingSharePayload) return null;
+
+  const payload = incomingSharePayload;
+  const banner = document.createElement("div");
+  banner.id = "qol-share-banner";
+  banner.className = "qol-share-banner";
+
+  const info = document.createElement("div");
+  info.className = "qol-share-banner-info";
+
+  const title = document.createElement("strong");
+  title.textContent = t().sharedBannerTitle;
+
+  const meta = document.createElement("span");
+  meta.textContent = t().sharedBannerMeta(payload.n || "Projekt", payload.i.length);
+
+  info.append(title, meta);
+
+  const btns = document.createElement("div");
+  btns.className = "qol-share-banner-actions";
+
+  const importBtn = makeButton(t().sharedImportBtn, "primary-button", () => {
+    const importedList = {
+      id: newId(),
+      name: String(payload.n || "Geteilte Liste").slice(0, 60),
+      notes: payload.note || "",
+      notesOpen: Boolean(payload.note && payload.note.trim()),
+      itemsOpen: true,
+      summaryChoices: payload.c || {},
+      items: payload.i
+        .filter(([shortId]) => Boolean(shortId))
+        .map(([shortId, qty, done]) => ({
+          id: newId(),
+          blockId: normalizeId(shortId),
+          quantity: Math.max(1, Number(qty) || 1),
+          done: Boolean(done)
+        }))
+    };
+
+    state.lists.unshift(importedList);
+    activeListId = importedList.id;
+    incomingSharePayload = null;
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+    save();
+    render();
+  });
+
+  const closeBtn = makeButton(t().sharedDismissBtn, "quiet-button", () => {
+    incomingSharePayload = null;
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+    render();
+  });
+
+  btns.append(importBtn, closeBtn);
+  banner.append(info, btns);
+  return banner;
+}
+
+async function readIncomingShareHash() {
+  const hash = window.location.hash || "";
+  if (!hash.startsWith("#share=")) return;
+
+  const token = hash.slice("#share=".length);
+  if (!token) return;
+
+  try {
+    const payload = await decodeSharePayload(token);
+    if (payload && Array.isArray(payload.i)) {
+      incomingSharePayload = payload;
+      render();
+    }
+  } catch (err) {
+    console.warn("Geteilter Link konnte nicht gelesen werden:", err);
+  }
+}
 
 function ensureMinecraftToastStyles() {
   if (mcToastStyleInjected || document.getElementById("craftlog-mc-toast-styles")) {
@@ -2982,9 +3245,31 @@ function renderItem(list, item) {
     input.select();
   });
 
+  const stepper = document.createElement("div");
+  stepper.className = "item-quick-stepper";
+
+  for (const [delta, stepLabel, titleText] of [
+    [-1, "−1", t().stepMinus1],
+    [1, "+1", t().stepPlus1],
+    [64, "+64", t().stepPlus64]
+  ]) {
+    const stepBtn = makeButton(stepLabel, "item-step-btn", () => {
+      const next = Math.max(1, item.quantity + delta);
+      if (next === item.quantity) return;
+      item.quantity = next;
+      highlightedItemId = item.id;
+      save();
+      render();
+    });
+    stepBtn.title = titleText;
+    stepBtn.setAttribute("aria-label", titleText);
+    if (delta < 0 && item.quantity <= 1) stepBtn.disabled = true;
+    stepper.append(stepBtn);
+  }
+
   const actions = document.createElement("div");
   actions.className = "item-actions";
-  actions.append(edit, remove);
+  actions.append(stepper, edit, remove);
 
   top.append(label, actions);
   card.append(top, createSourceBadges(item));
@@ -3052,6 +3337,9 @@ function createItemsToolbar(doneCount) {
 function renderWorkspace() {
   const workspace = document.querySelector("#workspace");
   workspace.replaceChildren();
+
+  const shareBanner = createIncomingShareBanner();
+  if (shareBanner) workspace.append(shareBanner);
 
   const status = document.createElement("p");
   status.className = "status";
@@ -3125,12 +3413,17 @@ function renderWorkspace() {
   const actions = document.createElement("div");
   actions.className = "heading-actions";
 
+  const shareBtn = makeButton(t().shareBtn, "quiet-button qol-share-btn", () =>
+    shareProjectList(list, shareBtn)
+  );
+
   const duplicateBtn = makeButton(t().duplicate, "quiet-button", () =>
     duplicateListAsTemplate(list)
   );
   duplicateBtn.title = t().duplicateTitle;
 
   actions.append(
+    shareBtn,
     duplicateBtn,
     makeButton(t().rename, "quiet-button", () => {
       const name = prompt(t().renameQuestion, list.name)?.trim();
@@ -3699,3 +3992,5 @@ render();
 loadAppVersion();
 loadData();
 window.renderCraftLog = render;
+readIncomingShareHash();
+window.addEventListener("hashchange", readIncomingShareHash);

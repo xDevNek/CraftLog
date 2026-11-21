@@ -473,7 +473,7 @@ summary:focus-visible {
     transform: scale(0.95);
   }
   45% {
-    transform: scale(1.04);
+    transform: scale(1.06);
   }
   100% {
     transform: scale(1);
@@ -497,7 +497,7 @@ summary:focus-visible {
   color: var(--forest);
   font-weight: bold;
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--mc-grass, var(--forest)) 25%, transparent);
-  animation: qolShareSuccessPop 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: qolShareSuccessPop 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 :root[data-theme="dark"] .qol-share-btn.is-copied {
@@ -726,21 +726,29 @@ summary:focus-visible {
   min-width: 0;
 }
 
-.search-input,
+.search-input {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+}
+
 .quantity-input {
   width: 100%;
   min-width: 0;
 }
 
-.search-selected-icon {
+.search-selected-icon,
+.search > .mc-list-icon {
   position: absolute;
   left: 0.75rem;
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
+  z-index: 2;
 }
 
 .search-selected-icon[hidden],
+.search > .mc-list-icon[hidden],
 .search-clear-btn[hidden],
 .suggestions[hidden] {
   display: none;
@@ -1117,7 +1125,16 @@ summary:focus-visible {
 }
 
 .item.is-highlighted {
-  animation: craftlogItemFlash 950ms ease-out;
+  animation: qolItemPulse 650ms ease-out;
+}
+
+@keyframes qolItemPulse {
+  0% {
+    box-shadow: 0 0 0 3px rgba(85, 201, 24, 0.75);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(85, 201, 24, 0);
+  }
 }
 
 .item-top {

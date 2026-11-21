@@ -1,4 +1,4 @@
-const CACHE_NAME = "craftlog-v0.0.40";
+const CACHE_NAME = "craftlog-v0.0.46";
 const ICON_CACHE = "craftlog-icons-v1";
 
 const CORE_ASSETS = [
@@ -9,7 +9,6 @@ const CORE_ASSETS = [
   "./recipe-helpers.js",
   "./list-summary.js",
   "./app.js",
-  "./qol-features.js",
   "./manifest.json",
   "./assets/icon.svg",
   "./assets/icon-192.png"
