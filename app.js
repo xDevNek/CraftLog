@@ -12,6 +12,40 @@ const SORT_MODES = [
   "name-desc"
 ];
 
+const ICON_EXACT_ALIASES = {
+  carrots: "carrot",
+  potatoes: "potato",
+  beetroots: "beetroot",
+  sweet_berry_bush: "sweet_berries",
+  attached_melon_stem: "melon_seeds",
+  melon_stem: "melon_seeds",
+  attached_pumpkin_stem: "pumpkin_seeds",
+  pumpkin_stem: "pumpkin_seeds",
+  torchflower_crop: "torchflower_seeds",
+  pitcher_crop: "pitcher_pod",
+  cocoa: "cocoa_beans",
+  wall_torch: "torch",
+  soul_wall_torch: "soul_torch",
+  redstone_wall_torch: "redstone_torch",
+  redstone_wire: "redstone",
+  tripwire: "string",
+  water: "water_bucket",
+  lava: "lava_bucket",
+  powder_snow: "powder_snow_bucket",
+  frosted_ice: "ice",
+  piston_head: "piston",
+  tall_seagrass: "seagrass",
+  kelp_plant: "kelp",
+  bamboo_sapling: "bamboo",
+  big_dripleaf_stem: "big_dripleaf",
+  cave_vines: "glow_berries",
+  cave_vines_plant: "glow_berries",
+  weeping_vines_plant: "weeping_vines",
+  twisting_vines_plant: "twisting_vines",
+  potted_azalea_bush: "azalea",
+  potted_flowering_azalea_bush: "flowering_azalea"
+};
+
 const LITEMATICA_ALIASES = {
   "redstone wire": "minecraft:redstone",
   "redstone dust": "minecraft:redstone",
@@ -447,6 +481,10 @@ let highlightedItemId = null;
 // Flüchtiger Arbeitsspeicher für Rückgängig-Aktionen (keine Cookies)
 let activeToast = null;
 let toastTimerId = null;
+let toastEffectTimerId = null;
+let mcToastStyleInjected = false;
+
+const failedIconIds = new Set();
 
 const themeToggle = document.querySelector("#theme-toggle");
 
@@ -523,10 +561,387 @@ function save() {
 
 save();
 
+function ensureMinecraftToastStyles() {
+  if (mcToastStyleInjected || document.getElementById("craftlog-mc-toast-styles")) {
+    mcToastStyleInjected = true;
+    return;
+  }
+
+  const style = document.createElement("style");
+  style.id = "craftlog-mc-toast-styles";
+  style.textContent = `
+    #craftlog-toast.craftlog-toast {
+      position: fixed !important;
+      top: calc(env(safe-area-inset-top, 0px) + 0.9rem) !important;
+      left: 50% !important;
+      right: auto !important;
+      bottom: auto !important;
+      transform: translateX(-50%) !important;
+      z-index: 2147483647 !important;
+      width: min(450px, calc(100vw - 1.5rem)) !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      display: block !important;
+      overflow: visible !important;
+      background: #212421 !important;
+      color: #ffffff !important;
+      border: 3px solid #101210 !important;
+      border-radius: 2px !important;
+      box-shadow:
+        inset 2px 2px 0 #555c55,
+        inset -2px -2px 0 #141614,
+        0 14px 32px rgba(0, 0, 0, 0.52) !important;
+    }
+
+    #craftlog-toast.craftlog-toast.is-animated {
+      animation: mcToastSlideIn 300ms cubic-bezier(0.18, 0.89, 0.32, 1.18) forwards;
+    }
+
+    #craftlog-toast.craftlog-toast--create {
+      background: #222019 !important;
+      border-color: #141109 !important;
+      box-shadow:
+        inset 2px 2px 0 #fcee4b,
+        inset -2px -2px 0 #9c6b16,
+        0 0 0 2px #141109,
+        0 14px 32px rgba(0, 0, 0, 0.55) !important;
+    }
+
+    .mc-toast-body {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.72rem 0.9rem 0.68rem;
+    }
+
+    .mc-toast-icon {
+      position: relative;
+      width: 40px;
+      height: 40px;
+      flex: 0 0 40px;
+      border-radius: 2px;
+      box-shadow:
+        inset 2px 2px 0 rgba(255, 255, 255, 0.28),
+        inset -2px -2px 0 rgba(0, 0, 0, 0.38),
+        0 0 0 2px #101210;
+    }
+
+    .craftlog-toast--delete .mc-toast-icon {
+      background: linear-gradient(
+        to bottom,
+        #6ab04c 0 28%,
+        #4e8d36 28% 36%,
+        #8b5a2b 36% 100%
+      );
+      animation: mcBlockBreakAnim 540ms 140ms ease-out forwards;
+    }
+
+    .craftlog-toast--create .mc-toast-icon {
+      overflow: hidden;
+      background: linear-gradient(135deg, #fff176 0 25%, #fbc02d 25% 65%, #c77c14 65% 100%);
+      box-shadow:
+        inset 2px 2px 0 #fff9c4,
+        inset -2px -2px 0 #8d5508,
+        0 0 0 2px #141109;
+      animation: mcAdvancementPop 520ms 120ms cubic-bezier(0.2, 1.35, 0.4, 1) forwards;
+    }
+
+    .craftlog-toast--create .mc-toast-icon::before {
+      content: "+";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: #ffffff;
+      font-size: 1.45rem;
+      font-weight: bold;
+      text-shadow: 2px 2px 0 #6d3f04;
+    }
+
+    .craftlog-toast--create .mc-toast-icon::after {
+      content: "";
+      position: absolute;
+      top: -20%;
+      left: -60%;
+      width: 45%;
+      height: 140%;
+      background: rgba(255, 255, 255, 0.65);
+      transform: rotate(22deg);
+      animation: mcGoldShine 750ms 240ms ease-out forwards;
+    }
+
+    .craftlog-toast--info .mc-toast-icon {
+      background: linear-gradient(135deg, #64b5f6 0 35%, #1e88e5 35% 100%);
+    }
+
+    .craftlog-toast--info .mc-toast-icon::before {
+      content: "✓";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: #ffffff;
+      font-size: 1.25rem;
+      font-weight: bold;
+      text-shadow: 1px 1px 0 #101210;
+    }
+
+    .mc-toast-cracks {
+      position: absolute;
+      inset: 2px;
+      opacity: 0;
+      background-image:
+        linear-gradient(45deg, transparent 40%, #111 40% 54%, transparent 54%),
+        linear-gradient(-45deg, transparent 42%, #111 42% 55%, transparent 55%),
+        linear-gradient(90deg, transparent 45%, #111 45% 55%, transparent 55%);
+      background-size: 16px 16px, 18px 18px, 14px 14px;
+      background-position: 2px 3px, 10px 8px, 6px 12px;
+      animation: mcCrackSteps 450ms 140ms steps(1) forwards;
+    }
+
+    .mc-toast-glyph {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: #ffffff;
+      font-size: 1.2rem;
+      font-weight: bold;
+      text-shadow: 2px 2px 0 #101210;
+      opacity: 0;
+      animation: mcGlyphFadeIn 220ms 500ms ease-out forwards;
+    }
+
+    .mc-toast-content {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .mc-toast-kicker {
+      margin: 0 0 0.14rem;
+      font-size: 0.7rem;
+      font-weight: bold;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-shadow: 1px 1px 0 #101210;
+    }
+
+    .craftlog-toast--delete .mc-toast-kicker { color: #ff7675; }
+    .craftlog-toast--create .mc-toast-kicker { color: #ffff55; }
+    .craftlog-toast--info .mc-toast-kicker { color: #80ff20; }
+
+    .craftlog-toast-text {
+      display: block;
+      margin: 0;
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: #ffffff;
+      text-shadow: 1px 1px 0 #101210;
+      overflow-wrap: anywhere;
+    }
+
+    .craftlog-toast-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex: 0 0 auto;
+    }
+
+    .craftlog-toast-undo {
+      padding: 0.35rem 0.65rem;
+      border: 2px solid #101210;
+      border-radius: 2px;
+      background: #4e8d36;
+      color: #ffffff;
+      font-size: 0.78rem;
+      font-weight: bold;
+      text-shadow: 1px 1px 0 #101210;
+      box-shadow:
+        inset 1px 1px 0 #8ad468,
+        inset -1px -1px 0 #2d571d;
+      cursor: pointer;
+    }
+
+    .craftlog-toast-undo:hover { background: #5ea642; }
+
+    .craftlog-toast-close {
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      border: 2px solid #101210;
+      border-radius: 2px;
+      background: #353a35;
+      color: #d6dbd6;
+      font-size: 0.95rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .craftlog-toast-close:hover {
+      background: #4a504a;
+      color: #ffffff;
+    }
+
+    .craftlog-toast-progress {
+      position: relative;
+      display: block;
+      height: 10px;
+      width: 100%;
+      background: #111511;
+      border-top: 2px solid #101210;
+      transform-origin: left center;
+      background-image: linear-gradient(to bottom, #9cff3b 0 45%, #55c918 45% 100%);
+      box-shadow: inset 0 -2px 0 #2e7d0b;
+      animation: mcToastTimerRun linear forwards;
+    }
+
+    .craftlog-toast--create .craftlog-toast-progress {
+      background-image: linear-gradient(to bottom, #fff176 0 45%, #fbc02d 45% 100%);
+      box-shadow: inset 0 -2px 0 #a66c08;
+    }
+
+    .mc-pixel-particle {
+      position: absolute;
+      top: 26px;
+      left: 30px;
+      z-index: 30;
+      width: var(--size, 9px);
+      height: var(--size, 9px);
+      background: var(--particle-color, #6ab04c);
+      box-shadow:
+        inset 1px 1px 0 rgba(255, 255, 255, 0.35),
+        0 0 0 1.5px #101210;
+      pointer-events: none;
+      animation: mcPixelArc 950ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+    }
+
+    @keyframes mcToastSlideIn {
+      0% { opacity: 0; transform: translate(-50%, -28px) scale(0.92); }
+      70% { opacity: 1; transform: translate(-50%, 4px) scale(1.02); }
+      100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    }
+
+    @keyframes mcCrackSteps {
+      0% { opacity: 0.35; transform: scale(0.85); }
+      33% { opacity: 0.72; transform: scale(0.95); }
+      66% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; }
+    }
+
+    @keyframes mcBlockBreakAnim {
+      0% { transform: scale(1) rotate(0deg); }
+      22% { transform: scale(1.08) rotate(-7deg); }
+      46% { transform: scale(0.92) rotate(7deg); }
+      72% { transform: scale(1.18) rotate(-4deg); filter: brightness(1.35); }
+      86% { transform: scale(0.76); opacity: 0.6; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; filter: brightness(1); }
+    }
+
+    @keyframes mcAdvancementPop {
+      0% { transform: scale(0.85) rotate(-6deg); }
+      55% { transform: scale(1.16) rotate(4deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
+    @keyframes mcGoldShine {
+      0% { left: -60%; }
+      100% { left: 140%; }
+    }
+
+    @keyframes mcGlyphFadeIn {
+      0% { opacity: 0; transform: scale(0.5); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes mcToastTimerRun {
+      from { transform: scaleX(1); }
+      to { transform: scaleX(0); }
+    }
+
+    @keyframes mcPixelArc {
+      0% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0deg); }
+      32% { opacity: 1; transform: translate(calc(var(--dx) * 0.45), var(--dy-peak, -28px)) scale(1.1) rotate(95deg); }
+      100% { opacity: 0; transform: translate(var(--dx, 45px), var(--dy-end, 65px)) scale(0.4) rotate(220deg); }
+    }
+  `;
+  document.head.appendChild(style);
+  mcToastStyleInjected = true;
+}
+
+function playMinecraftToastSound(variant) {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const now = ctx.currentTime;
+
+    if (variant === "create") {
+      [659.25, 987.77].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+        gain.gain.setValueAtTime(0.07, now + idx * 0.09);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.24);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.09);
+        osc.stop(now + idx * 0.09 + 0.25);
+      });
+    } else if (variant === "delete") {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "square";
+      osc.frequency.setValueAtTime(195, now);
+      osc.frequency.exponentialRampToValueAtTime(72, now + 0.12);
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.14);
+    }
+  } catch {
+    // Audio optional
+  }
+}
+
+function spawnMinecraftToastParticles(toastEl, variant) {
+  if (variant !== "create" && variant !== "delete") return;
+  const colors =
+    variant === "create"
+      ? ["#fff176", "#fbc02d", "#80ff20", "#ffffff", "#ffd54f"]
+      : ["#6ab04c", "#4e8d36", "#8b5a2b", "#a87444", "#9cff3b"];
+
+  const count = variant === "create" ? 18 : 22;
+  for (let i = 0; i < count; i += 1) {
+    const pixel = document.createElement("span");
+    pixel.className = "mc-pixel-particle";
+
+    const spreadX = (Math.random() - 0.35) * 200;
+    const peakY = variant === "create" ? -28 - Math.random() * 42 : -18 - Math.random() * 34;
+    const endY = variant === "create" ? 12 + Math.random() * 44 : 44 + Math.random() * 58;
+    const size = 7 + Math.floor(Math.random() * 5);
+
+    pixel.style.setProperty("--dx", `${Math.round(spreadX)}px`);
+    pixel.style.setProperty("--dy-peak", `${Math.round(peakY)}px`);
+    pixel.style.setProperty("--dy-end", `${Math.round(endY)}px`);
+    pixel.style.setProperty("--size", `${size}px`);
+    pixel.style.setProperty("--particle-color", colors[i % colors.length]);
+
+    toastEl.appendChild(pixel);
+    setTimeout(() => pixel.remove(), 980);
+  }
+}
+
 function clearToast() {
   if (toastTimerId) {
     clearTimeout(toastTimerId);
     toastTimerId = null;
+  }
+  if (toastEffectTimerId) {
+    clearTimeout(toastEffectTimerId);
+    toastEffectTimerId = null;
   }
   activeToast = null;
 
@@ -536,25 +951,61 @@ function clearToast() {
   }
 }
 
-function renderToast() {
+function renderToast(animate = true) {
+  ensureMinecraftToastStyles();
+
   const existing = document.getElementById("craftlog-toast");
+  if (!activeToast) {
+    if (existing) existing.remove();
+    return;
+  }
+
+  if (!animate && existing) {
+    const textEl = existing.querySelector(".craftlog-toast-text");
+    if (textEl) textEl.textContent = activeToast.getMessage();
+    return;
+  }
+
   if (existing) {
     existing.remove();
   }
 
-  if (!activeToast) {
-    return;
-  }
+  const variant = activeToast.variant || "info";
+  const kickerText =
+    variant === "create"
+      ? (language === "de" ? "Fortschritt erzielt!" : "Advancement Made!")
+      : variant === "delete"
+        ? (language === "de" ? "Block abgebaut" : "Block Broken")
+        : "CraftLog";
 
   const toast = document.createElement("div");
   toast.id = "craftlog-toast";
-  toast.className = "craftlog-toast";
+  toast.className = `craftlog-toast craftlog-toast--${variant}${animate ? " is-animated" : ""}`;
   toast.setAttribute("role", "status");
   toast.setAttribute("aria-live", "polite");
+
+  const body = document.createElement("div");
+  body.className = "mc-toast-body";
+
+  const icon = document.createElement("span");
+  icon.className = "mc-toast-icon";
+  icon.setAttribute("aria-hidden", "true");
+  if (variant === "delete") {
+    icon.innerHTML = '<span class="mc-toast-cracks"></span><span class="mc-toast-glyph">×</span>';
+  }
+
+  const content = document.createElement("div");
+  content.className = "mc-toast-content";
+
+  const kicker = document.createElement("p");
+  kicker.className = "mc-toast-kicker";
+  kicker.textContent = kickerText;
 
   const message = document.createElement("span");
   message.className = "craftlog-toast-text";
   message.textContent = activeToast.getMessage();
+
+  content.append(kicker, message);
 
   const actions = document.createElement("div");
   actions.className = "craftlog-toast-actions";
@@ -583,24 +1034,37 @@ function renderToast() {
   dismissBtn.addEventListener("click", clearToast);
   actions.append(dismissBtn);
 
+  body.append(icon, content, actions);
+
   const timerBar = document.createElement("span");
   timerBar.className = "craftlog-toast-progress";
   timerBar.style.animationDuration = `${activeToast.duration}ms`;
 
-  toast.append(message, actions, timerBar);
+  toast.append(body, timerBar);
   document.body.append(toast);
+
+  if (animate && (variant === "create" || variant === "delete")) {
+    const delay = variant === "create" ? 180 : 420;
+    toastEffectTimerId = setTimeout(() => {
+      if (toast.isConnected) {
+        spawnMinecraftToastParticles(toast, variant);
+        playMinecraftToastSound(variant);
+      }
+    }, delay);
+  }
 }
 
-function showToast({ getMessage, onUndo = null, duration = 6000 }) {
+function showToast({ getMessage, onUndo = null, duration = 5000, variant = "info" }) {
   clearToast();
 
   activeToast = {
     getMessage,
     onUndo,
-    duration
+    duration,
+    variant
   };
 
-  renderToast();
+  renderToast(true);
 
   toastTimerId = setTimeout(() => {
     clearToast();
@@ -633,6 +1097,8 @@ function deleteListWithUndo(list) {
 
   showToast({
     getMessage: () => t().listRemovedNotice(listSnapshot.name),
+    variant: "delete",
+    duration: 5500,
     onUndo: () => {
       const insertAt = Math.min(listIndex, state.lists.length);
       state.lists.splice(insertAt, 0, listSnapshot);
@@ -707,7 +1173,8 @@ function duplicateListAsTemplate(list) {
 
   showToast({
     getMessage: () => t().listDuplicatedNotice(copyName),
-    duration: 4000
+    variant: "create",
+    duration: 4200
   });
 }
 
@@ -1564,6 +2031,7 @@ function openLitematicaImportDialog(parsed) {
       showToast({
         getMessage: () =>
           t().litematicaCreatedNotice(listName, entries.length),
+        variant: "create",
         duration: 4500
       });
     }
@@ -2068,7 +2536,124 @@ function formatStackHint(quantity) {
     : `${stacks} ${stackWord}`;
 }
 
+function resolveIconId(id) {
+  const normalized = normalizeId(id);
+  const shortId = normalized.replace(/^minecraft:/, "");
+  if (!shortId) return normalized;
+
+  if (ICON_EXACT_ALIASES[shortId]) {
+    return `minecraft:${ICON_EXACT_ALIASES[shortId]}`;
+  }
+  if (shortId.startsWith("potted_")) {
+    return `minecraft:${shortId.slice(7)}`;
+  }
+  if (shortId.endsWith("_wall_sign")) {
+    return `minecraft:${shortId.replace("_wall_sign", "_sign")}`;
+  }
+  if (shortId.endsWith("_wall_hanging_sign")) {
+    return `minecraft:${shortId.replace("_wall_hanging_sign", "_hanging_sign")}`;
+  }
+  if (shortId.endsWith("_wall_banner")) {
+    return `minecraft:${shortId.replace("_wall_banner", "_banner")}`;
+  }
+  if (shortId.endsWith("_wall_head")) {
+    return `minecraft:${shortId.replace("_wall_head", "_head")}`;
+  }
+  if (shortId.endsWith("_wall_skull")) {
+    return `minecraft:${shortId.replace("_wall_skull", "_skull")}`;
+  }
+  if (shortId.endsWith("_wall_fan")) {
+    return `minecraft:${shortId.replace("_wall_fan", "_fan")}`;
+  }
+  if (shortId === "candle_cake" || shortId.endsWith("_candle_cake")) {
+    return "minecraft:cake";
+  }
+  if (shortId.endsWith("_cauldron")) {
+    return "minecraft:cauldron";
+  }
+  return normalized;
+}
+
+function isTechnicalBlockState(id) {
+  const shortId = String(id || "").replace(/^minecraft:/, "");
+  if (!shortId) return false;
+  if (ICON_EXACT_ALIASES[shortId]) return true;
+  if (
+    /^(air|cave_air|void_air|moving_piston|fire|soul_fire|nether_portal|end_portal|end_gateway|bubble_column)$/.test(
+      shortId
+    )
+  ) {
+    return true;
+  }
+  return (
+    shortId.startsWith("potted_") ||
+    shortId.endsWith("_wall_sign") ||
+    shortId.endsWith("_wall_hanging_sign") ||
+    shortId.endsWith("_wall_banner") ||
+    shortId.endsWith("_wall_head") ||
+    shortId.endsWith("_wall_skull") ||
+    shortId.endsWith("_wall_fan") ||
+    shortId === "candle_cake" ||
+    shortId.endsWith("_candle_cake") ||
+    shortId.endsWith("_cauldron")
+  );
+}
+
+function installSafeIconHelper() {
+  const H = window.CraftLogHelpers;
+  if (!H || typeof H.applyItemIcon !== "function" || H.applyItemIcon._isSafeWrapped) {
+    return;
+  }
+
+  const originalApplyItemIcon = H.applyItemIcon.bind(H);
+  const originalColorForItem =
+    typeof H.colorForItem === "function" ? H.colorForItem.bind(H) : null;
+
+  if (originalColorForItem) {
+    H.colorForItem = function safeColorForItem(rawId) {
+      return originalColorForItem(resolveIconId(rawId));
+    };
+  }
+
+  H.applyItemIcon = function safeApplyItemIcon(iconEl, rawId) {
+    const resolvedId = resolveIconId(rawId);
+
+    if (originalColorForItem && iconEl) {
+      iconEl.style.setProperty("--swatch-color", originalColorForItem(resolvedId));
+    }
+
+    if (!iconEl || failedIconIds.has(resolvedId)) {
+      return;
+    }
+
+    originalApplyItemIcon(iconEl, resolvedId);
+
+    const img = iconEl.querySelector("img");
+    if (img) {
+      img.loading = "lazy";
+      img.decoding = "async";
+
+      if (!img.dataset.safeErrorBound) {
+        img.dataset.safeErrorBound = "1";
+        img.addEventListener(
+          "error",
+          () => {
+            failedIconIds.add(resolvedId);
+            img.remove();
+            iconEl.classList.remove("has-icon");
+          },
+          { once: true }
+        );
+      }
+    }
+  };
+
+  H.applyItemIcon._isSafeWrapped = true;
+}
+
 function createItemIcon(id, isBlock) {
+  installSafeIconHelper();
+
   const icon = document.createElement("span");
   icon.className = `mc-list-icon${isBlock === false ? " is-item" : ""}`;
   icon.setAttribute("aria-hidden", "true");
@@ -2422,6 +3007,10 @@ function searchCatalog(rawQuery) {
   const results = [];
 
   for (const entry of catalog) {
+    if (isTechnicalBlockState(entry.id)) {
+      continue;
+    }
+
     const deText = entry._searchDe ?? normalizeSearchText(entry.de);
     const enText = entry._searchEn ?? normalizeSearchText(entry.en || entry.id);
 
@@ -2493,6 +3082,8 @@ function createSearch(form, quantityInput, list) {
   }
 
   function showSelectedIcon(entry) {
+    installSafeIconHelper();
+
     selectedIcon.className = `mc-list-icon search-selected-icon${entry.isBlock === false ? " is-item" : ""}`;
     selectedIcon.classList.remove("has-icon");
 
@@ -3726,6 +4317,7 @@ function renderFooter() {
 }
 
 function render(options = {}) {
+  installSafeIconHelper();
   document.documentElement.lang = language;
 
   document.querySelector(
@@ -3758,7 +4350,7 @@ function render(options = {}) {
   updateThemeToggle();
 
   if (activeToast) {
-    renderToast();
+    renderToast(false);
   }
 
   if (options.focusSearch) {
@@ -3796,6 +4388,15 @@ document.querySelector(
   input.value = "";
   save();
   render({ focusSearch: true });
+
+  showToast({
+    getMessage: () =>
+      language === "de"
+        ? `Liste „${name}“ erstellt`
+        : `List “${name}” created`,
+    variant: "create",
+    duration: 4200
+  });
 });
 
 for (const code of ["de", "en"]) {
@@ -3869,17 +4470,16 @@ async function loadAppVersion() {
 
 async function loadData() {
   try {
-    const response = await fetch(
-      "./minecraft-data.json"
-    );
+    const [dataResponse, defaultSourcesResponse] = await Promise.all([
+      fetch("./minecraft-data.json"),
+      fetch("./data/sources/1.21.4.json").catch(() => null)
+    ]);
 
-    if (!response.ok) {
-      throw new Error(
-        `Minecraft-Daten: HTTP ${response.status}`
-      );
+    if (!dataResponse.ok) {
+      throw new Error(`Minecraft-Daten: HTTP ${dataResponse.status}`);
     }
 
-    const data = await response.json();
+    const data = await dataResponse.json();
 
     if (
       !Array.isArray(data.catalog) ||
@@ -3887,9 +4487,7 @@ async function loadData() {
       typeof data.recipes !== "object" ||
       typeof data.version !== "string"
     ) {
-      throw new Error(
-        "Ungültige Minecraft-Datendatei"
-      );
+      throw new Error("Ungültige Minecraft-Datendatei");
     }
 
     minecraft = data;
@@ -3899,51 +4497,33 @@ async function loadData() {
       _searchEn: normalizeSearchText(entry.en || entry.id)
     }));
 
-    catalogById = new Map(
-      catalog.map(entry => [
-        entry.id,
-        entry
-      ])
-    );
-
+    catalogById = new Map(catalog.map(entry => [entry.id, entry]));
     catalogByLookup = buildCatalogLookup(catalog);
 
-    // Beschaffungsdaten sind optional. Listen und
-    // Gesamtbedarf funktionieren auch ohne diese Datei.
     try {
-      const sourcesResponse = await fetch(
-        `./data/sources/${encodeURIComponent(data.version)}.json`
-      );
+      const sourcesResponse =
+        data.version === "1.21.4" && defaultSourcesResponse
+          ? defaultSourcesResponse
+          : await fetch(`./data/sources/${encodeURIComponent(data.version)}.json`);
 
-      if (!sourcesResponse.ok) {
-        throw new Error(
-          `HTTP ${sourcesResponse.status}`
-        );
+      if (!sourcesResponse || !sourcesResponse.ok) {
+        throw new Error(`HTTP ${sourcesResponse?.status || "offline"}`);
       }
 
-      const sourceData =
-        await sourcesResponse.json();
+      const sourceData = await sourcesResponse.json();
 
       if (
         sourceData.version !== data.version ||
         !sourceData.entries ||
         typeof sourceData.entries !== "object"
       ) {
-        throw new Error(
-          "Beschaffungsdaten passen nicht zur Version."
-        );
+        throw new Error("Beschaffungsdaten passen nicht zur Version.");
       }
 
-      window.materialSources =
-        sourceData.entries;
+      window.materialSources = sourceData.entries;
     } catch (sourceError) {
-      window.materialSources =
-        window.materialSources || {};
-
-      console.warn(
-        "Beschaffungsdaten nicht geladen:",
-        sourceError
-      );
+      window.materialSources = window.materialSources || {};
+      console.warn("Beschaffungsdaten nicht geladen:", sourceError);
     }
   } catch (error) {
     loadError = true;
@@ -3953,6 +4533,7 @@ async function loadData() {
   render();
 }
 
+installSafeIconHelper();
 render();
 loadAppVersion();
 loadData();

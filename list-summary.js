@@ -46,6 +46,29 @@ window.createListSummary = function createListSummary(
     ])
   );
 
+  const activeCyclingSlots = new Set();
+  let sharedCycleTimer = null;
+
+  function registerCyclingSlot(el) {
+    activeCyclingSlots.add(el);
+    if (sharedCycleTimer) return;
+
+    sharedCycleTimer = setInterval(() => {
+      if (document.hidden) return;
+      for (const slot of activeCyclingSlots) {
+        if (!slot.isConnected) {
+          activeCyclingSlots.delete(slot);
+          continue;
+        }
+        slot._cycleTick?.();
+      }
+      if (activeCyclingSlots.size === 0) {
+        clearInterval(sharedCycleTimer);
+        sharedCycleTimer = null;
+      }
+    }, 1500);
+  }
+
   function createCyclingSlot(optionIds, lockedId = "") {
     const container = document.createElement("div");
     container.className = "crafting-slot";
@@ -112,8 +135,11 @@ window.createListSummary = function createListSummary(
 
       if (animate) {
         slotMain.classList.remove("is-swapping");
-        void slotMain.offsetWidth;
-        slotMain.classList.add("is-swapping");
+        requestAnimationFrame(() => {
+          if (slotMain.isConnected) {
+            slotMain.classList.add("is-swapping");
+          }
+        });
       }
     }
 
@@ -156,14 +182,11 @@ window.createListSummary = function createListSummary(
         window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
       if (!prefersReducedMotion) {
-        const timer = setInterval(() => {
-          if (!slotMain.isConnected) {
-            clearInterval(timer);
-            return;
-          }
+        slotMain._cycleTick = () => {
           if (paused) return;
           advance();
-        }, 1400);
+        };
+        registerCyclingSlot(slotMain);
       }
     }
 
@@ -799,11 +822,6 @@ window.createListSummary = function createListSummary(
     details.className = "tc-panel";
     details.open = list.summarySections[sectionKey] !== false;
 
-    details.addEventListener("toggle", () => {
-      list.summarySections[sectionKey] = details.open;
-      save();
-    });
-
     const header = document.createElement("summary");
     header.className = "tc-panel-header";
 
@@ -862,7 +880,25 @@ window.createListSummary = function createListSummary(
     header.append(titleWrap, actions);
 
     const sectionBody = node("div", "tc-panel-body");
-    renderContent(sectionBody);
+    let rendered = false;
+
+    const ensureRendered = () => {
+      if (rendered) return;
+      rendered = true;
+      renderContent(sectionBody);
+    };
+
+    if (details.open) {
+      ensureRendered();
+    }
+
+    details.addEventListener("toggle", () => {
+      list.summarySections[sectionKey] = details.open;
+      if (details.open) {
+        ensureRendered();
+      }
+      save();
+    });
 
     details.append(header, sectionBody);
     return details;
@@ -873,6 +909,7 @@ window.createListSummary = function createListSummary(
       document.activeElement?.dataset?.invId || null;
 
     missingChoicesCount = 0;
+    activeCyclingSlots.clear();
     body.replaceChildren();
 
     const goalQuantities = new Map();

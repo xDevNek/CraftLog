@@ -2,12 +2,27 @@
 <html lang="de" data-theme="dark">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CraftLog · Craft Planner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>CraftLog · Minecraft Materiallisten &amp; Crafting-Planer (1.21.4)</title>
+  <meta
+    name="description"
+    content="CraftLog ist ein kostenloser Minecraft-Materiallisten- und Crafting-Planer für Java 1.21.4 – mit Rezeptrechner, Litematica-Import (.litematic), Beschaffungswegen und Offline-Modus."
+  >
+  <meta name="robots" content="index, follow">
+
+  <!-- Link-Vorschau beim Teilen (Discord, Messenger, Social Media) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="CraftLog · Minecraft Materiallisten &amp; Crafting-Planer">
+  <meta
+    property="og:description"
+    content="Plane Blöcke, Rohstoffe und Crafting-Schritte für deine Minecraft-Projekte – inklusive Litematica-Import und Offline-Unterstützung."
+  >
+  <meta property="og:image" content="./assets/icon-192.png">
+
   <script src="./theme-init.js"></script>
   <link rel="stylesheet" href="./style.css">
 
-  <!-- Neue eigene Icons (Browser-Tab & App-Icons) -->
+  <!-- Icons (Browser-Tab & App-Icons) -->
   <link rel="icon" type="image/svg+xml" href="./assets/icon.svg">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/icon-192.png">
   <link rel="apple-touch-icon" href="./assets/icon-192.png">
@@ -89,10 +104,11 @@
   <script src="./list-summary.js" defer></script>
   <script src="./app.js" defer></script>
   <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .catch((err) => console.error('Service Worker Fehler:', err));
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch(err => {
+          console.warn("Service Worker Registrierung fehlgeschlagen:", err);
+        });
       });
     }
   </script>
